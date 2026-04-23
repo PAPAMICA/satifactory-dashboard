@@ -1,4 +1,4 @@
-# Satisfactory Dashboard
+# FICSIT Control
 
 Tableau de bord web pour [Ficsit Remote Monitoring](https://github.com/porisius/FicsitRemoteMonitoring) : électricité, inventaire agrégé, favoris, disposition modulaire, paramètres FRM et gestion d’utilisateurs (HTTP Basic + SQLite).
 

@@ -1,4 +1,4 @@
-# Satisfactory Dashboard — Docker Compose
+# FICSIT Control — Docker Compose
 #
 # Traefik (exemple) : router vers ce service sur le port 3000, TLS via certresolver.
 # labels:
