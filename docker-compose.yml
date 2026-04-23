@@ -1,0 +1,28 @@
+# Satisfactory Dashboard — Docker Compose
+#
+# Traefik (exemple) : router vers ce service sur le port 3000, TLS via certresolver.
+# labels:
+#   traefik.enable: "true"
+#   traefik.http.routers.sf.rule: Host(`dashboard.example.com`)
+#   traefik.http.routers.sf.entrypoints: websecure
+#   traefik.http.routers.sf.tls.certresolver: letsencrypt
+#   traefik.http.services.sf.loadbalancer.server.port: 3000
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: "3000"
+      HOST: "0.0.0.0"
+      DATA_DIR: /data
+      # Optionnel : premier compte admin si la base est vide
+      INIT_ADMIN_USERNAME: ${INIT_ADMIN_USERNAME:-}
+      INIT_ADMIN_PASSWORD: ${INIT_ADMIN_PASSWORD:-}
+    volumes:
+      - satifactory-data:/data
+    restart: unless-stopped
+
+volumes:
+  satifactory-data:

@@ -1,0 +1,246 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sf-display: "Oxanium", system-ui, sans-serif;
+  --font-sf-ui: "Rajdhani", system-ui, sans-serif;
+  --color-sf-bg-deep: #0c0b09;
+  --color-sf-bg: #161411;
+  --color-sf-panel: #1e1c18;
+  --color-sf-panel-2: #252218;
+  --color-sf-border: #3d3528;
+  --color-sf-border-bright: #6b5c42;
+  --color-sf-orange: #ff9a1a;
+  --color-sf-orange-dim: #c97814;
+  --color-sf-cyan: #5fd4ff;
+  --color-sf-cyan-dim: #3a9ec4;
+  --color-sf-text: #e8dcc8;
+  --color-sf-muted: #8a7f6e;
+  --color-sf-danger: #ff4a4a;
+  --color-sf-ok: #7cfc8a;
+}
+
+.sf-body {
+  font-family: var(--font-sf-ui);
+  background: var(--color-sf-bg-deep);
+  color: var(--color-sf-text);
+  min-height: 100vh;
+  background-image:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(255, 154, 26, 0.12), transparent),
+    linear-gradient(180deg, #12100e 0%, #0c0b09 40%, #0a0908 100%);
+}
+
+.sf-display {
+  font-family: var(--font-sf-display);
+}
+
+/* Panel style inspired by in-game menus */
+.sf-panel {
+  position: relative;
+  background: linear-gradient(165deg, #242018 0%, #1a1814 45%, #141210 100%);
+  border: 1px solid var(--color-sf-border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 200, 120, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+    0 4px 24px rgba(0, 0, 0, 0.45);
+  border-radius: 2px;
+}
+
+.sf-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 154, 26, 0.06);
+}
+
+.sf-panel-header {
+  font-family: var(--font-sf-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: var(--color-sf-orange);
+  border-bottom: 1px solid var(--color-sf-border);
+  padding: 0.5rem 0.75rem;
+  background: linear-gradient(90deg, rgba(255, 154, 26, 0.08), transparent);
+}
+
+.sf-btn {
+  font-family: var(--font-sf-display);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 2px;
+  border: 1px solid var(--color-sf-border-bright);
+  background: linear-gradient(180deg, #3a3228 0%, #2a241c 100%);
+  color: var(--color-sf-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: transform 0.08s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  touch-action: manipulation;
+}
+
+.sf-btn:hover {
+  border-color: var(--color-sf-orange-dim);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 12px rgba(255, 154, 26, 0.15);
+}
+
+.sf-btn:active {
+  transform: translateY(1px);
+}
+
+.sf-btn-primary {
+  border-color: var(--color-sf-orange);
+  color: #1a1208;
+  background: linear-gradient(180deg, #ffc14d 0%, var(--color-sf-orange) 45%, #c97814 100%);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.sf-btn-primary:hover {
+  border-color: #ffd080;
+  box-shadow: 0 0 16px rgba(255, 154, 26, 0.35);
+}
+
+.sf-input {
+  background: #0e0d0b;
+  border: 1px solid var(--color-sf-border);
+  color: var(--color-sf-text);
+  /* Pas de shorthand `padding` : permet aux utilitaires Tailwind `pl-*` / `pr-*` de s’appliquer (ex. champ avec icône). */
+  padding-top: 0.45rem;
+  padding-bottom: 0.45rem;
+  padding-right: 0.6rem;
+  padding-left: 0.6rem;
+  border-radius: 2px;
+  font-family: var(--font-sf-ui);
+  font-size: 1rem;
+}
+
+.sf-input:focus {
+  outline: none;
+  border-color: var(--color-sf-cyan-dim);
+  box-shadow: 0 0 0 1px rgba(95, 212, 255, 0.25);
+}
+
+.sf-topbar {
+  border-bottom: 2px solid var(--color-sf-border);
+  background: linear-gradient(180deg, #1f1c18 0%, #161411 100%);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+.sf-brand {
+  font-family: var(--font-sf-display);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-sf-orange);
+  text-shadow: 0 0 20px rgba(255, 154, 26, 0.35);
+}
+
+.sf-grid-bg {
+  background-image:
+    linear-gradient(rgba(95, 212, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(95, 212, 255, 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+@keyframes sf-ficsit-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.sf-ficsit-bob {
+  animation: sf-ficsit-bob 1.05s ease-in-out infinite;
+}
+
+/* Mascotte PNG (fond transparent) : léger halo pour se détacher du fond */
+.sf-ficsit-mascot {
+  filter: drop-shadow(0 10px 28px rgba(255, 154, 26, 0.2));
+}
+
+/* react-grid-layout overrides */
+.react-grid-item.react-grid-placeholder {
+  background: rgba(255, 154, 26, 0.15) !important;
+  border: 1px dashed var(--color-sf-orange) !important;
+  border-radius: 2px;
+}
+
+.react-grid-item > .react-resizable-handle::after {
+  border-color: var(--color-sf-muted) !important;
+}
+
+/* Page de connexion : fond animé + entrée du panneau */
+@keyframes sf-login-aurora-drift {
+  from {
+    filter: hue-rotate(0deg) brightness(1);
+    transform: scale(1);
+  }
+  to {
+    filter: hue-rotate(14deg) brightness(1.06);
+    transform: scale(1.04);
+  }
+}
+
+@keyframes sf-login-rise {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sf-login-card-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 12px 40px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(255, 154, 26, 0.07);
+  }
+  50% {
+    box-shadow:
+      0 18px 52px rgba(0, 0, 0, 0.6),
+      0 0 42px rgba(255, 154, 26, 0.12);
+  }
+}
+
+.sf-login-aurora {
+  background:
+    radial-gradient(ellipse 100% 55% at 50% -5%, rgba(255, 154, 26, 0.2), transparent 55%),
+    radial-gradient(ellipse 70% 45% at 100% 25%, rgba(95, 212, 255, 0.1), transparent 50%),
+    radial-gradient(ellipse 55% 40% at 0% 85%, rgba(255, 154, 26, 0.07), transparent 48%);
+  animation: sf-login-aurora-drift 16s ease-in-out infinite alternate;
+}
+
+.sf-login-grid {
+  background-image:
+    linear-gradient(rgba(61, 53, 40, 0.28) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(61, 53, 40, 0.28) 1px, transparent 1px);
+  background-size: 36px 36px;
+}
+
+.sf-login-rise {
+  animation: sf-login-rise 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.sf-login-rise-delay-1 {
+  animation-delay: 0.07s;
+}
+
+.sf-login-rise-delay-2 {
+  animation-delay: 0.14s;
+}
+
+.sf-login-card-glow {
+  animation: sf-login-card-glow 5.5s ease-in-out infinite;
+}
