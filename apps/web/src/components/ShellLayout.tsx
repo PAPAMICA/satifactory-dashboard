@@ -148,26 +148,32 @@ function LangToggle({
   onLang,
   t,
   compact,
+  flagsOnly,
 }: {
   lang: string;
   onLang: (lng: string) => void;
   t: (k: string) => string;
   compact?: boolean;
+  /** Mobile / en-tête : uniquement les drapeaux (labels EN/FR masqués). */
+  flagsOnly?: boolean;
 }) {
   const isFr = lang.startsWith("fr");
   const isEn = !isFr;
-  const inner = compact ? "flex flex-col items-center gap-0" : "flex flex-row items-center gap-1";
-  const seg =
-    "flex flex-1 items-center justify-center rounded-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-sf-orange " +
-    (compact ? "min-h-[2.35rem] px-0.5 py-0.5" : "min-h-[2.25rem] px-2 py-1.5");
+  const inner = flagsOnly ? "flex items-center justify-center" : compact ? "flex flex-col items-center gap-0" : "flex flex-row items-center gap-1";
+  const seg = flagsOnly ?
+      "flex size-9 shrink-0 items-center justify-center rounded-md text-lg leading-none transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-sf-orange "
+    : "flex flex-1 items-center justify-center rounded-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-sf-orange " +
+      (compact ? "min-h-[2.35rem] px-0.5 py-0.5" : "min-h-[2.25rem] px-2 py-1.5");
   const on = "bg-sf-orange/20 text-sf-orange ring-1 ring-sf-orange/40";
   const off = "text-sf-muted ring-1 ring-transparent hover:bg-white/5 hover:text-sf-text";
   const lbl = "text-[0.58rem] font-bold uppercase tracking-[0.1em]";
-  const flag = compact ? "text-[0.95rem] leading-none" : "text-[1.05rem] leading-none";
+  const flag = flagsOnly ? "text-[1.15rem] leading-none" : compact ? "text-[0.95rem] leading-none" : "text-[1.05rem] leading-none";
   return (
     <div
       className={
-        compact ?
+        flagsOnly ?
+          "inline-flex shrink-0 items-center gap-0.5 rounded-lg border border-sf-border/70 bg-black/35 p-0.5"
+        : compact ?
           "flex w-full min-w-0 flex-col gap-0.5 rounded-lg border border-sf-border/70 bg-black/35 p-0.5"
         : "flex w-full min-w-0 flex-row gap-0.5 rounded-lg border border-sf-border/70 bg-black/35 p-0.5"
       }
@@ -184,7 +190,7 @@ function LangToggle({
         <span className={flag} aria-hidden>
           🇬🇧
         </span>
-        <span className={lbl}>EN</span>
+        {!flagsOnly ? <span className={lbl}>EN</span> : null}
       </button>
       <button
         type="button"
@@ -196,7 +202,7 @@ function LangToggle({
         <span className={flag} aria-hidden>
           🇫🇷
         </span>
-        <span className={lbl}>FR</span>
+        {!flagsOnly ? <span className={lbl}>FR</span> : null}
       </button>
     </div>
   );
@@ -210,7 +216,8 @@ function ShellAccountLangLogout({
   t,
   navCollapsed,
   variant,
-  compactDockRow,
+  flagsOnly,
+  showUsername,
 }: {
   me: Me | undefined;
   lang: string;
@@ -219,40 +226,18 @@ function ShellAccountLangLogout({
   t: (k: string) => string;
   navCollapsed: boolean;
   variant: "dock" | "drawer";
-  /** Barre inférieure pleine largeur (mobile) : une ligne horizontale. */
-  compactDockRow?: boolean;
+  /** Libellés EN/FR masqués (drapeaux seuls). */
+  flagsOnly?: boolean;
+  /** Afficher le nom d’utilisateur au-dessus des contrôles. */
+  showUsername?: boolean;
 }) {
+  const showUser = showUsername !== false;
   const logoutBtn =
     "flex min-h-10 shrink-0 items-center gap-2 rounded-lg text-sm font-medium text-sf-muted transition-colors hover:bg-white/5 hover:text-sf-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-sf-orange " +
-    (navCollapsed || compactDockRow ? "justify-center px-0" : "w-full justify-center px-3 md:justify-start");
-  if (compactDockRow) {
-    return (
-      <div className="flex w-full min-w-0 flex-row items-center gap-2">
-        {me ?
-          <p className="min-w-0 flex-1 truncate text-left text-[0.7rem] leading-tight text-sf-muted" title={me.username}>
-            {me.isPublicViewer ? t("nav.publicViewerUser") : me.username}
-          </p>
-        : (
-          <span className="min-w-0 flex-1 text-[0.7rem] text-sf-muted">—</span>
-        )}
-        <div className="w-[6.5rem] shrink-0">
-          <LangToggle lang={lang} onLang={onLang} t={t} compact={false} />
-        </div>
-        <button
-          type="button"
-          className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-sf-muted hover:bg-white/5 hover:text-sf-orange"
-          onClick={onLogout}
-          aria-label={t("nav.logout")}
-          title={t("nav.logout")}
-        >
-          <IconLogout className="shrink-0" />
-        </button>
-      </div>
-    );
-  }
+    (navCollapsed ? "justify-center px-0" : "w-full justify-center px-3 md:justify-start");
   return (
     <div className={variant === "dock" ? "flex w-full min-w-0 flex-col gap-2" : "flex w-full flex-col gap-2"}>
-      {me && !navCollapsed ?
+      {showUser && me && !navCollapsed ?
         <p
           className="truncate px-0.5 text-center text-[0.7rem] leading-tight text-sf-muted md:text-left md:text-xs"
           title={me.username}
@@ -260,7 +245,7 @@ function ShellAccountLangLogout({
           {me.isPublicViewer ? t("nav.publicViewerUser") : me.username}
         </p>
       : null}
-      {me && navCollapsed ?
+      {showUser && me && navCollapsed ?
         <p
           className="truncate text-center text-[0.65rem] leading-tight text-sf-muted"
           title={me.isPublicViewer ? t("nav.publicViewerUser") : me.username}
@@ -268,8 +253,8 @@ function ShellAccountLangLogout({
           {me.isPublicViewer ? "@" : me.username.slice(0, 2)}
         </p>
       : null}
-      <div className={navCollapsed ? "flex w-full justify-center" : "w-full"}>
-        <LangToggle lang={lang} onLang={onLang} t={t} compact={navCollapsed} />
+      <div className={flagsOnly || navCollapsed ? "flex w-full justify-center" : "w-full"}>
+        <LangToggle lang={lang} onLang={onLang} t={t} compact={navCollapsed && !flagsOnly} flagsOnly={flagsOnly} />
       </div>
       <button type="button" className={logoutBtn} onClick={onLogout} title={navCollapsed ? t("nav.logout") : undefined}>
         <IconLogout className="shrink-0" />
@@ -497,6 +482,8 @@ export function ShellLayout({
             }}
             t={t}
             navCollapsed={false}
+            flagsOnly
+            showUsername={false}
           />
         </div>
       ) : null}
@@ -530,15 +517,14 @@ export function ShellLayout({
         </div>
       </aside>
 
-      {/* Réduire + compte + langue + déconnexion : toujours fixés au bas du viewport (largeur = rail sur md+) */}
+      {/* Réduire + compte + langue + déconnexion : bas du viewport sur md+ uniquement (mobile : barre d’actions dans l’en-tête) */}
       <div
         className={
-          "fixed bottom-0 left-0 z-[42] flex flex-col gap-2 border-t border-sf-border/90 bg-[#12100e] px-3 py-2 shadow-[0_-12px_40px_rgba(0,0,0,0.55)] backdrop-blur-md " +
-          "pb-[max(0.35rem,env(safe-area-inset-bottom,0px))] max-md:right-0 " +
+          "fixed bottom-0 left-0 z-[42] hidden flex-col gap-2 border-t border-sf-border/90 bg-[#12100e] px-3 py-2 shadow-[0_-12px_40px_rgba(0,0,0,0.55)] backdrop-blur-md " +
+          "pb-[max(0.35rem,env(safe-area-inset-bottom,0px))] md:flex " +
           (navCollapsed ? "md:w-14 md:px-1.5" : "md:w-52 md:px-3") +
           " md:right-auto " +
-          "transition-[width,padding] duration-200 ease-out " +
-          (mobileOpen ? "hidden md:flex" : "flex")
+          "transition-[width,padding] duration-200 ease-out "
         }
       >
         {isMdUp ?
@@ -567,7 +553,6 @@ export function ShellLayout({
           onLogout={onLogout}
           t={t}
           navCollapsed={isMdUp ? navCollapsed : false}
-          compactDockRow={!isMdUp && !mobileOpen}
         />
       </div>
 
@@ -583,15 +568,25 @@ export function ShellLayout({
           >
             {mobileOpen ? <span className="text-lg">✕</span> : <IconMenu />}
           </button>
-          <span className="sf-brand min-w-0 truncate text-xs uppercase tracking-[0.12em] text-sf-orange">{t("appTitle")}</span>
+          <span className="sf-brand min-w-0 flex-1 truncate text-xs uppercase tracking-[0.12em] text-sf-orange">{t("appTitle")}</span>
+          <div className="flex shrink-0 items-center gap-1">
+            <LangToggle lang={lang} onLang={onLang} t={t} flagsOnly />
+            <button
+              type="button"
+              className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg border border-sf-border/50 text-sf-muted transition-colors hover:border-sf-orange/40 hover:text-sf-orange"
+              onClick={onLogout}
+              aria-label={t("nav.logout")}
+              title={t("nav.logout")}
+            >
+              <IconLogout className="shrink-0" />
+            </button>
+          </div>
         </header>
 
         <main
           className={
             "relative flex min-h-0 w-full min-w-0 flex-1 flex-col px-2 pt-3 sm:px-4 sm:pt-4 sf-grid-bg " +
-            (!mobileOpen ?
-              "max-md:pb-[calc(4.25rem+max(0.75rem,env(safe-area-inset-bottom,0px)))] md:pb-4"
-            : "max-md:pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] md:pb-4")
+            "max-md:pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] md:pb-4"
           }
         >
           {me?.isPublicViewer ?

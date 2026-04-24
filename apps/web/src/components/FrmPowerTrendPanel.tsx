@@ -165,13 +165,20 @@ export function FrmPowerTrendPanel({
       </div>
     );
     const chart = (
-      <div className="relative min-h-[220px] w-full flex-1 basis-0 sm:min-h-[260px]">
+      <div className="relative min-h-[min(38vh,280px)] w-full flex-1 basis-0 sm:min-h-[260px]">
         {chartEmpty ? (
           <div className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center p-4 text-center text-sm leading-relaxed text-sf-muted">
             {t("dashboard.chartNoData")}
           </div>
         ) : null}
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+          minHeight={200}
+          minWidth={0}
+          debounce={32}
+          initialDimension={{ width: 360, height: 220 }}
+        >
           <LineChart
             data={history}
             margin={{
