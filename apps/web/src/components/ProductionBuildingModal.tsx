@@ -42,21 +42,13 @@ function productionItemDisplayName(line: ProductionLine, lang: string): string {
   return itemLabel(c, lang) ?? c;
 }
 
+/** Libellé unique : nom de bâtiment traduit (catalogue), sans doublon avec le nom d’instance FRM. */
 export function factoryBuildingPrimarySecondary(
   r: Record<string, unknown>,
   lang: string,
 ): { primary: string; secondary?: string } {
   const thumbCls = factoryBuildingClassForThumb(r);
-  const type = frmgClassLabel(thumbCls, lang);
-  const typeEn = frmgClassLabel(thumbCls, "en");
-  const typeFr = frmgClassLabel(thumbCls, "fr");
-  const inst = String(r.Name ?? r.name ?? "").trim();
-  if (!inst) return { primary: type };
-  const il = inst.toLowerCase();
-  if (il === type.toLowerCase() || il === typeEn.toLowerCase() || il === typeFr.toLowerCase()) {
-    return { primary: type };
-  }
-  return { primary: type, secondary: inst };
+  return { primary: frmgClassLabel(thumbCls, lang) };
 }
 
 function isGeneratorFrmRow(r: Record<string, unknown>): boolean {
@@ -279,8 +271,8 @@ const CHART_H = 132;
 export function ProductionBuildingModal({ row, onClose, showMap = true, showAdminControls = false }: ProductionBuildingModalProps) {
   const { t, i18n } = useTranslation();
   const thumbCls = factoryBuildingClassForThumb(row);
-  const { primary, secondary } = factoryBuildingPrimarySecondary(row, i18n.language);
-  const mapPopupTitle = secondary ? `${primary} — ${secondary}` : primary;
+  const { primary } = factoryBuildingPrimarySecondary(row, i18n.language);
+  const mapPopupTitle = primary;
   const buildingId = String(row.ID ?? row.Id ?? "").trim();
 
   const prodLines = factoryProductionLines(row);
@@ -387,7 +379,6 @@ export function ProductionBuildingModal({ row, onClose, showMap = true, showAdmi
           buildingId={buildingId}
           buildingClassName={String(row.ClassName ?? row.className ?? "")}
           title={primary}
-          subtitle={secondary}
           compact={!showMap}
         />
       : null}
@@ -566,9 +557,6 @@ export function ProductionBuildingModal({ row, onClose, showMap = true, showAdmi
                 </h2>
                 {!isGenerator ? <EfficiencyCapsule pct={effPct} /> : null}
               </div>
-              {secondary ?
-                <p className="mt-0.5 truncate text-xs text-sf-muted">{secondary}</p>
-              : null}
             </div>
           </div>
           <button

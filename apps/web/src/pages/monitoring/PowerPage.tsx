@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { PowerEnergyFavoritesPanel } from "@/components/PowerEnergyFavoritesPanel";
 import { FrmSwitchesPanel } from "@/components/FrmSwitchesPanel";
 import { useTranslation } from "react-i18next";
 import { FicsitPageLoader } from "@/components/FicsitPageLoader";
@@ -121,8 +120,6 @@ function PowerPageBody() {
               </div>
             </section>
           )}
-
-          {!me?.isPublicViewer ? <PowerEnergyFavoritesPanel /> : null}
 
           {me?.isAdmin ?
             <section className="sf-panel min-w-0 overflow-hidden">

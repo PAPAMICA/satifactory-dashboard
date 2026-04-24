@@ -101,13 +101,16 @@ export function FrmPowerTrendPanel({
     const lang = i18n.language;
     const wm = chartWindowMin;
     setHistory(
-      pts.map((p) => ({
-        tsMs: p.tsMs,
-        t: formatChartAxisTime(p.tsMs, wm, lang),
+      pts.map((p) => {
+        const tsMs = Number(p.tsMs);
+        return {
+        tsMs,
+        t: formatChartAxisTime(tsMs, wm, lang),
         production: Math.round(p.production * 10) / 10,
         consumption: Math.round(p.consumption * 10) / 10,
         capacity: Math.round(p.capacity * 10) / 10,
-      })),
+      };
+      }),
     );
   }, [
     frmOk,

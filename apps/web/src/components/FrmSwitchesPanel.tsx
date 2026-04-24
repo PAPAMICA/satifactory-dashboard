@@ -59,11 +59,10 @@ export function FrmSwitchesPanel({ className = "", compact }: Props) {
         const id = switchRowId(r);
         if (!id) return null;
         const on = switchRowIsOn(r);
-        const nm = String(r.Name ?? r.name ?? r.SwitchTag ?? "").trim() || id;
         const cls = String(r.ClassName ?? r.className ?? "Build_PowerSwitch_C").trim();
         const pri = r.Priority ?? r.priority;
         const priN = typeof pri === "number" ? pri : Number(pri);
-        const typeLbl = frmgClassLabel(cls, i18n.language);
+        const titleLbl = frmgClassLabel(cls, i18n.language);
         const busy = mut.isPending && mut.variables?.id === id;
         return (
           <li
@@ -81,8 +80,7 @@ export function FrmSwitchesPanel({ className = "", compact }: Props) {
             >
               <ItemThumb className={cls} label="" size={compact ? 32 : 40} />
               <div className="min-w-0 flex-1">
-                <p className={`truncate font-medium text-sf-cream ${compact ? "text-xs" : "text-sm"}`}>{nm}</p>
-                <p className="truncate font-mono text-[0.6rem] text-sf-muted">{typeLbl}</p>
+                <p className={`truncate font-medium text-sf-cream ${compact ? "text-xs" : "text-sm"}`}>{titleLbl}</p>
                 {!compact && Number.isFinite(priN) && priN >= 0 ?
                   <p className="mt-0.5 text-[0.6rem] text-sf-cyan">
                     {t("control.switchPriority", { n: Math.round(priN) })}

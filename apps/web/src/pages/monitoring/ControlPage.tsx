@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ControlFavoritesSettingsModal } from "@/components/ControlFavoritesSettingsModal";
 import { FicsitPageLoader } from "@/components/FicsitPageLoader";
 import { FrmSwitchesPanel } from "@/components/FrmSwitchesPanel";
 import { MonitoringGate } from "@/components/MonitoringGate";
@@ -52,7 +53,7 @@ function FactoryEnableRow({
   const openBuildingDetail = useOpenBuildingDetail();
   const id = String(row.ID ?? row.Id ?? "").trim();
   const thumb = factoryBuildingClassForThumb(row);
-  const { primary, secondary } = factoryBuildingPrimarySecondary(row, lang);
+  const { primary } = factoryBuildingPrimarySecondary(row, lang);
   const cached = readCachedBuildingEnabled(id);
   const [local, setLocal] = useState<boolean | null>(cached ?? null);
   const guess = local ?? true;
@@ -71,7 +72,6 @@ function FactoryEnableRow({
         <ItemThumb className={thumb} label="" size={36} />
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-sf-cream">{primary}</p>
-          {secondary ? <p className="truncate text-xs text-sf-muted">{secondary}</p> : null}
         </div>
       </button>
       {canPower ?
@@ -116,8 +116,7 @@ function GeneratorEnableRow({
   const rawClass = String(row.ClassName ?? row.className ?? "").trim();
   const thumb = rawClass ? normalizeBuildClassName(rawClass) : "Build_GeneratorCoal_C";
   const imgClass = thumb !== "—" ? thumb : "Build_GeneratorCoal_C";
-  const nm = String(row.Name ?? row.name ?? "—");
-  const typeLbl = frmgClassLabel(imgClass, lang);
+  const { primary: genPrimary } = factoryBuildingPrimarySecondary(row, lang);
   const cached = id ? readCachedBuildingEnabled(id) : undefined;
   const [local, setLocal] = useState<boolean | null>(cached ?? null);
   const guess = local ?? true;
@@ -135,8 +134,7 @@ function GeneratorEnableRow({
       >
         <ItemThumb className={imgClass} label="" size={36} />
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-sf-cream">{nm}</p>
-          <p className="truncate text-xs text-sf-muted">{typeLbl}</p>
+          <p className="truncate text-sm font-medium text-sf-cream">{genPrimary}</p>
         </div>
       </button>
       {canPower ?
@@ -173,6 +171,7 @@ function ControlPageBody() {
     staleTime: 60_000,
   });
   const isAdmin = Boolean(me?.isAdmin);
+  const [favoritesSettingsOpen, setFavoritesSettingsOpen] = useState(false);
   const [factoryQ, setFactoryQ] = useState("");
   const fq = useQuery({
     queryKey: ["frm", "getFactory"],
@@ -219,6 +218,27 @@ function ControlPageBody() {
           <ItemThumb className="Build_ManufacturerMk1_C" label="" size={44} />
         </div>
       </header>
+
+      <section className="sf-panel overflow-hidden">
+        <div className="sf-panel-header flex flex-wrap items-center justify-between gap-2 border-b border-sf-border/50 bg-gradient-to-r from-sf-orange/12 to-transparent">
+          <div className="flex min-w-0 items-center gap-2">
+            <ItemThumb className="Build_PowerStorageMk1_C" label="" size={28} />
+            <span className="min-w-0 truncate font-medium uppercase tracking-wider text-sf-cream">
+              {t("control.powerFavoritesTitle")}
+            </span>
+          </div>
+          <button type="button" className="sf-btn shrink-0 text-xs" onClick={() => setFavoritesSettingsOpen(true)}>
+            {t("control.openFavoritesSettings")}
+          </button>
+        </div>
+        <p className="border-b border-sf-border/40 px-3 py-2 text-xs text-sf-muted sm:px-4">{t("control.powerFavoritesHint")}</p>
+      </section>
+
+      <ControlFavoritesSettingsModal
+        open={favoritesSettingsOpen}
+        onClose={() => setFavoritesSettingsOpen(false)}
+        isAdmin={isAdmin}
+      />
 
       <section className="sf-panel overflow-hidden">
         <div className="sf-panel-header flex items-center gap-2 border-b border-sf-border/50 bg-gradient-to-r from-sf-cyan/10 to-transparent">

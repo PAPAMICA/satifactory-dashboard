@@ -1307,7 +1307,13 @@ export function DashboardPage() {
             (variantIsVisual ? "bg-sf-orange/15 text-sf-orange" : "bg-black/30 text-sf-muted")
           }
         >
-          {variantIsVisual ? t("dashboard.widgets.cardsBadge") : t("dashboard.widgets.listBadge")}
+          {id === "ctrl" ?
+            variantIsVisual ?
+              t("dashboard.widgets.controlMapBadge")
+            : t("dashboard.widgets.controlListBadge")
+          : variantIsVisual ?
+            t("dashboard.widgets.cardsBadge")
+          : t("dashboard.widgets.listBadge")}
         </span>
         {editMode ? (
           <div className="flex shrink-0 items-center gap-0.5">
@@ -1340,8 +1346,24 @@ export function DashboardPage() {
             <button
               type="button"
               className="rounded p-1.5 text-sf-muted hover:bg-black/40 hover:text-sf-orange"
-              title={variantIsVisual ? t("dashboard.toggleToList") : t("dashboard.toggleToCards")}
-              aria-label={variantIsVisual ? t("dashboard.toggleToList") : t("dashboard.toggleToCards")}
+              title={
+                id === "ctrl" ?
+                  variantIsVisual ?
+                    t("dashboard.widgets.controlToggleToList")
+                  : t("dashboard.widgets.controlToggleToMap")
+                : variantIsVisual ?
+                  t("dashboard.toggleToList")
+                : t("dashboard.toggleToCards")
+              }
+              aria-label={
+                id === "ctrl" ?
+                  variantIsVisual ?
+                    t("dashboard.widgets.controlToggleToList")
+                  : t("dashboard.widgets.controlToggleToMap")
+                : variantIsVisual ?
+                  t("dashboard.toggleToList")
+                : t("dashboard.toggleToCards")
+              }
               onMouseDown={(e) => e.stopPropagation()}
               onClick={() => toggleWidgetVariant(id)}
             >
@@ -1416,7 +1438,7 @@ export function DashboardPage() {
         if (!me?.isAdmin) {
           return <p className="p-3 text-xs text-sf-muted">{t("dashboard.widgets.controlAdminOnly")}</p>;
         }
-        return <FrmDashboardControlWidget editMode={editMode} />;
+        return <FrmDashboardControlWidget editMode={editMode} variant={v} />;
       default:
         return <p className="p-3 text-sm text-sf-muted">{t("dashboard.widgets.unknown")}</p>;
     }

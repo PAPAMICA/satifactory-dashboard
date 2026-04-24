@@ -74,7 +74,7 @@ export type PowerHistoryPoint = {
 /** Derniers échantillons chronologiques (pour courbe dashboard). */
 export async function queryPowerHistorySince(sinceMs: number, maxPoints: number): Promise<PowerHistoryPoint[]> {
   const cap = Math.min(Math.max(maxPoints, 10), 5000);
-  const { rows } = await getPool().query<PowerHistoryPoint>(
+  const { rows: rawRows } = await getPool().query(
     `SELECT ts_ms AS "tsMs", production, consumption, capacity,
             battery_avg AS "batteryAvg", fuse_count AS "fuseCount"
      FROM power_ts
@@ -82,6 +82,15 @@ export async function queryPowerHistorySince(sinceMs: number, maxPoints: number)
      ORDER BY ts_ms ASC`,
     [sinceMs],
   );
+  /** `node-pg` renvoie souvent BIGINT en string : JSON → `new Date("…")` = Invalid Date côté web. */
+  const rows: PowerHistoryPoint[] = rawRows.map((r: Record<string, unknown>) => ({
+    tsMs: Number(r.tsMs),
+    production: Number(r.production),
+    consumption: Number(r.consumption),
+    capacity: Number(r.capacity),
+    batteryAvg: Number(r.batteryAvg ?? 0),
+    fuseCount: Number(r.fuseCount ?? 0),
+  }));
   if (rows.length <= cap) return rows;
   const stride = Math.ceil(rows.length / cap);
   const out: PowerHistoryPoint[] = [];

@@ -69,3 +69,20 @@ export function wikiItemDetailUrl(className: string, lang: string): string {
 export function itemImageUrl(className: string): string | undefined {
   return imageUrlByClassName.get(className);
 }
+
+/** Filtre les classes du catalogue pour un champ de recherche (libellés FR/EN + classe brute). */
+export function filterCatalogClassNames(lang: string, query: string, limit = 500): string[] {
+  const all = allItemCatalogClassNames(lang);
+  const q = query.trim().toLowerCase();
+  if (!q) return all.slice(0, limit);
+  const useFr = lang.toLowerCase().startsWith("fr");
+  const lo = useFr ? labelsByLang.fr : labelsByLang.en;
+  const lx = useFr ? labelsByLang.en : labelsByLang.fr;
+  const out: string[] = [];
+  for (const c of all) {
+    if (out.length >= limit) break;
+    const blob = [lo[c], lx[c], c].filter(Boolean).join(" ").toLowerCase();
+    if (blob.includes(q)) out.push(c);
+  }
+  return out;
+}

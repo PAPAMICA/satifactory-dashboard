@@ -27,8 +27,12 @@ export function chartWindowMinutes(w: ChartTimeWindow): number {
   }
 }
 
-export function formatChartAxisTime(tsMs: number, windowMinutes: number, locale: string): string {
-  const d = new Date(tsMs);
+export function formatChartAxisTime(tsMs: number | string, windowMinutes: number, locale: string): string {
+  const ms = typeof tsMs === "number" && Number.isFinite(tsMs) ? tsMs : Number(tsMs);
+  const d = new Date(ms);
+  if (!Number.isFinite(ms) || Number.isNaN(d.getTime())) {
+    return "—";
+  }
   if (windowMinutes <= 60) {
     return d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   }

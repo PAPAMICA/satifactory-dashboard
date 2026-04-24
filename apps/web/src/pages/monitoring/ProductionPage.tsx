@@ -124,11 +124,10 @@ function ProductionPageBody() {
   const sorted = useMemo(() => {
     const dir = sortDir === "asc" ? 1 : -1;
     const list = filtered.map((r) => {
-      const { primary, secondary } = factoryBuildingPrimarySecondary(r, lang);
+      const { primary } = factoryBuildingPrimarySecondary(r, lang);
       return {
         row: r,
         primary,
-        secondary,
         boosted: factoryIsBoosted(r),
         bucket: factoryStatusBucket(r),
         efficiency: factoryProductivityPct(r),
@@ -296,9 +295,6 @@ function ProductionPageBody() {
                     <ItemThumb className={thumbCls} label={vm.primary} size={44} />
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold leading-snug text-sf-cream">{vm.primary}</p>
-                      {vm.secondary ?
-                        <p className="mt-0.5 truncate text-xs text-sf-muted">{vm.secondary}</p>
-                      : null}
                       <p className="mt-0.5 font-mono text-[0.65rem] text-sf-muted">
                         {t("monitoring.productionFilterEfficiency")}: {formatDecimalSpaces(vm.efficiency, 1)}%
                       </p>

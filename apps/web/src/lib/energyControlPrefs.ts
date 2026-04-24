@@ -1,8 +1,17 @@
 const LS_KEY = "sf_energy_control_prefs_v1";
 
+export type FavoriteBuildingGroup = {
+  id: string;
+  name: string;
+  /** Classe Satisfactory pour `ItemThumb` / PNG catalogue. */
+  thumbClass: string;
+  memberBuildingIds: string[];
+};
+
 export type EnergyControlPrefs = {
   favoriteSwitchIds: string[];
   favoriteBuildingIds: string[];
+  favoriteBuildingGroups: FavoriteBuildingGroup[];
   switchAliases: Record<string, string>;
   buildingAliases: Record<string, string>;
 };
@@ -14,6 +23,7 @@ let cachedLsRaw: string | null = null;
 let cachedSnapshot: EnergyControlPrefs = {
   favoriteSwitchIds: [],
   favoriteBuildingIds: [],
+  favoriteBuildingGroups: [],
   switchAliases: {},
   buildingAliases: {},
 };
@@ -22,15 +32,30 @@ function defaultPrefs(): EnergyControlPrefs {
   return {
     favoriteSwitchIds: [],
     favoriteBuildingIds: [],
+    favoriteBuildingGroups: [],
     switchAliases: {},
     buildingAliases: {},
   };
 }
 
+function parseFavoriteGroup(raw: unknown): FavoriteBuildingGroup | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  const id = String(o.id ?? "").trim();
+  const name = String(o.name ?? "").trim();
+  const thumbClass = String(o.thumbClass ?? "Build_ManufacturerMk1_C").trim() || "Build_ManufacturerMk1_C";
+  const memberBuildingIds = Array.isArray(o.memberBuildingIds) ? [...new Set(o.memberBuildingIds.map(String))] : [];
+  if (!id || !name) return null;
+  return { id, name, thumbClass, memberBuildingIds };
+}
+
 function normalizePrefs(o: Partial<EnergyControlPrefs>): EnergyControlPrefs {
+  const groupsRaw = Array.isArray(o.favoriteBuildingGroups) ? o.favoriteBuildingGroups : [];
+  const favoriteBuildingGroups = groupsRaw.map(parseFavoriteGroup).filter(Boolean) as FavoriteBuildingGroup[];
   return {
     favoriteSwitchIds: Array.isArray(o.favoriteSwitchIds) ? o.favoriteSwitchIds.map(String) : [],
     favoriteBuildingIds: Array.isArray(o.favoriteBuildingIds) ? o.favoriteBuildingIds.map(String) : [],
+    favoriteBuildingGroups,
     switchAliases: o.switchAliases && typeof o.switchAliases === "object" ? { ...o.switchAliases } : {},
     buildingAliases: o.buildingAliases && typeof o.buildingAliases === "object" ? { ...o.buildingAliases } : {},
   };
@@ -58,6 +83,10 @@ function writePrefs(p: EnergyControlPrefs): void {
   const frozen: EnergyControlPrefs = {
     favoriteSwitchIds: [...p.favoriteSwitchIds],
     favoriteBuildingIds: [...p.favoriteBuildingIds],
+    favoriteBuildingGroups: p.favoriteBuildingGroups.map((g) => ({
+      ...g,
+      memberBuildingIds: [...g.memberBuildingIds],
+    })),
     switchAliases: { ...p.switchAliases },
     buildingAliases: { ...p.buildingAliases },
   };
@@ -118,6 +147,65 @@ export function isFavoriteSwitch(id: string): boolean {
 
 export function isFavoriteBuilding(id: string): boolean {
   return readEnergyControlPrefs().favoriteBuildingIds.includes(id);
+}
+
+function newGroupId(): string {
+  try {
+    if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
+  } catch {
+    /* ignore */
+  }
+  return `g_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+/**
+ * Crée ou met à jour un groupe ; retire les membres des autres groupes pour éviter les doublons.
+ */
+export function upsertFavoriteBuildingGroup(group: FavoriteBuildingGroup): void {
+  const p = readEnergyControlPrefs();
+  const mem = new Set(group.memberBuildingIds);
+  const others = p.favoriteBuildingGroups
+    .filter((x) => x.id !== group.id)
+    .map((x) => ({
+      ...x,
+      memberBuildingIds: x.memberBuildingIds.filter((id) => !mem.has(id)),
+    }));
+  const g: FavoriteBuildingGroup = {
+    ...group,
+    name: group.name.trim(),
+    thumbClass: group.thumbClass.trim() || "Build_ManufacturerMk1_C",
+    memberBuildingIds: [...new Set(group.memberBuildingIds.map(String))],
+  };
+  writePrefs({ ...p, favoriteBuildingGroups: [...others, g] });
+}
+
+export function createFavoriteBuildingGroup(partial: {
+  name: string;
+  thumbClass: string;
+  memberBuildingIds: string[];
+}): FavoriteBuildingGroup {
+  const g: FavoriteBuildingGroup = {
+    id: newGroupId(),
+    name: partial.name.trim(),
+    thumbClass: partial.thumbClass.trim() || "Build_ManufacturerMk1_C",
+    memberBuildingIds: [...new Set(partial.memberBuildingIds.map(String))],
+  };
+  upsertFavoriteBuildingGroup(g);
+  return g;
+}
+
+export function removeFavoriteBuildingGroup(id: string): void {
+  const p = readEnergyControlPrefs();
+  writePrefs({ ...p, favoriteBuildingGroups: p.favoriteBuildingGroups.filter((g) => g.id !== id) });
+}
+
+/** IDs de bâtiments déjà présents dans un groupe favori (pour éviter les doublons dans le widget). */
+export function buildingIdsInFavoriteGroups(): Set<string> {
+  const s = new Set<string>();
+  for (const g of readEnergyControlPrefs().favoriteBuildingGroups) {
+    for (const id of g.memberBuildingIds) s.add(id);
+  }
+  return s;
 }
 
 export function displayNameForSwitch(id: string, frmName: string): string {
