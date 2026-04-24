@@ -70,7 +70,17 @@ export function wikiItemDetailUrl(className: string, lang: string): string {
   return `https://satisfactory-calculator.com/${seg}/items/detail/id/${encodeURIComponent(className)}`;
 }
 
+/** Mods / classes sans vignette fiable : forcer le repli (ex. mascotte FICSIT dans `ItemThumb`). */
+function forceNoCatalogImage(className: string): boolean {
+  const c = className.trim();
+  if (!c) return false;
+  /** Blocs AWS / intégrations : assets souvent absents ou non alignés sur le jeu de base. */
+  if (/^Build_AWS/i.test(c)) return true;
+  return false;
+}
+
 export function itemImageUrl(className: string): string | undefined {
+  if (forceNoCatalogImage(className)) return undefined;
   return imageUrlByClassName.get(className);
 }
 

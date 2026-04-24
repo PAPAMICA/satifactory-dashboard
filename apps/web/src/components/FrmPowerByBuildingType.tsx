@@ -26,69 +26,108 @@ function MiniMwSparkline({
   showAxes?: boolean;
 }) {
   const w = 120;
-  const h = compact ? 22 : 26;
-  const padL = showAxes ? 11 : 0;
-  const padB = showAxes ? 5 : 2;
+  const h = compact ? 22 : 30;
+  const padL = showAxes ? 14 : 0;
+  const padB = showAxes ? 6 : 2;
   const plotW = Math.max(1, w - padL - 2);
   const plotH = Math.max(1, h - padB - 2);
   const x0 = padL;
   const y0 = 1;
   const yAxisBottom = h - padB;
-  const marginCls = compact ? "mt-0 h-full max-h-[22px]" : "mt-1 h-[26px]";
-  const axisStroke = "#4a4235";
-  if (values.length < 2) {
+  const marginCls = compact ? "block h-[22px] w-full max-w-full shrink-0" : "mt-1.5 block h-[30px] w-full shrink-0";
+  const axisStroke = "#5c5345";
+  const gridStroke = "rgba(92,83,69,0.35)";
+  const vals = values.map((v) => Number(v) || 0);
+
+  const axisFrame = showAxes ? (
+    <>
+      <line x1={x0} y1={yAxisBottom} x2={w - 0.5} y2={yAxisBottom} stroke={axisStroke} strokeWidth="0.9" />
+      <line x1={x0} y1={y0} x2={x0} y2={yAxisBottom} stroke={axisStroke} strokeWidth="0.9" />
+      <line x1={x0 + plotW * 0.5} y1={y0 + 1} x2={x0 + plotW * 0.5} y2={yAxisBottom - 0.5} stroke={gridStroke} strokeWidth="0.45" />
+      <line x1={w - 1} y1={yAxisBottom - 3} x2={w - 1} y2={yAxisBottom} stroke={axisStroke} strokeWidth="0.65" />
+      <line x1={x0} y1={y0 + 1} x2={x0 + 3} y2={y0 + 1} stroke={axisStroke} strokeWidth="0.65" />
+    </>
+  ) : null;
+
+  if (vals.length === 0) {
     return (
       <svg
-        className={`${marginCls} w-full min-w-0 rounded bg-black/25 text-sf-orange ring-1 ring-sf-border/30`}
+        className={`${marginCls} min-w-0 rounded bg-black/25 text-sf-orange/70 ring-1 ring-sf-border/30`}
         viewBox={`0 0 ${w} ${h}`}
         preserveAspectRatio="none"
         role="img"
         aria-label={title}
       >
-        {showAxes ?
-          <>
-            <line x1={x0} y1={yAxisBottom} x2={w} y2={yAxisBottom} stroke={axisStroke} strokeWidth="0.75" />
-            <line x1={x0} y1={y0} x2={x0} y2={yAxisBottom} stroke={axisStroke} strokeWidth="0.75" />
-          </>
-        : null}
+        {axisFrame}
+        <line
+          x1={x0 + 1}
+          y1={y0 + plotH * 0.55}
+          x2={x0 + plotW - 1}
+          y2={y0 + plotH * 0.55}
+          stroke="currentColor"
+          strokeWidth="0.6"
+          strokeDasharray="3 2"
+          opacity="0.5"
+        />
       </svg>
     );
   }
-  const min = Math.min(...values);
-  const max = Math.max(...values);
+
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
   const span = max - min;
   const pad = span < 1e-6 ? 1 : 0;
   const lo = min - pad;
   const hi = max + pad;
   const range = hi - lo || 1;
-  const pts = values
-    .map((v, i) => {
-      const x =
-        values.length === 1 ? x0 + plotW / 2 : x0 + (i / (values.length - 1)) * plotW;
-      const y = y0 + plotH - 2 - ((Number(v) - lo) / range) * (plotH - 4);
-      return `${x},${y}`;
-    })
-    .join(" ");
+
+  const yForMw = (mw: number) => y0 + plotH - 2 - ((Number(mw) - lo) / range) * (plotH - 4);
+
+  const ptsPairs: [number, number][] =
+    vals.length === 1 ?
+      [
+        [x0 + 1, yForMw(vals[0])],
+        [x0 + plotW - 1, yForMw(vals[0])],
+      ]
+    : vals.map((v, i) => {
+        const x = x0 + (i / (vals.length - 1)) * plotW;
+        return [x, yForMw(v)] as [number, number];
+      });
+
+  const pts = ptsPairs.map(([x, y]) => `${x},${y}`).join(" ");
+  const fillD =
+    vals.length >= 1 ?
+      `M ${ptsPairs[0][0]},${yAxisBottom} L ${ptsPairs.map(([x, y]) => `${x},${y}`).join(" L ")} L ${ptsPairs[ptsPairs.length - 1][0]},${yAxisBottom} Z`
+    : "";
+
+  const fmtTick = (n: number) => (Math.abs(n) >= 100 ? String(Math.round(n)) : String(Math.round(n * 10) / 10));
+
   return (
     <svg
-      className={`${marginCls} w-full min-w-0 text-sf-orange`}
+      className={`${marginCls} min-w-0 text-sf-orange`}
       viewBox={`0 0 ${w} ${h}`}
       preserveAspectRatio="none"
       role="img"
       aria-label={title}
     >
-      {showAxes ?
+      {axisFrame}
+      {showAxes && vals.length ?
         <>
-          <line x1={x0} y1={yAxisBottom} x2={w} y2={yAxisBottom} stroke={axisStroke} strokeWidth="0.75" />
-          <line x1={x0} y1={y0} x2={x0} y2={yAxisBottom} stroke={axisStroke} strokeWidth="0.75" />
-          <line x1={w} y1={yAxisBottom - 3} x2={w} y2={yAxisBottom} stroke={axisStroke} strokeWidth="0.6" />
-          <line x1={x0} y1={y0} x2={x0 + 3} y2={y0} stroke={axisStroke} strokeWidth="0.6" />
+          <text x={1} y={y0 + 8} fill="#7a6f5e" fontSize="6.5" fontFamily="ui-monospace, monospace">
+            {fmtTick(hi)}
+          </text>
+          <text x={1} y={yAxisBottom - 1} fill="#7a6f5e" fontSize="6.5" fontFamily="ui-monospace, monospace">
+            {fmtTick(lo)}
+          </text>
         </>
+      : null}
+      {fillD ?
+        <path d={fillD} fill="rgba(255, 154, 26, 0.12)" stroke="none" />
       : null}
       <polyline
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.25"
+        strokeWidth="1.35"
         strokeLinejoin="round"
         strokeLinecap="round"
         points={pts}
@@ -145,7 +184,7 @@ export function FrmPowerByBuildingType({
 
   if (variant === "visual") {
     return (
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-1.5 overflow-auto p-2 sm:grid-cols-[repeat(auto-fill,minmax(188px,1fr))] sm:gap-2 sm:p-2.5">
+      <div className="grid min-h-0 flex-1 grid-cols-1 content-start items-start gap-2 overflow-auto p-2 sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] sm:gap-2.5 sm:p-2.5">
         {summaries?.length ?
           <div className="col-span-full flex flex-wrap justify-center gap-3 sm:justify-start">
             {summaries.map((s, i) => (
@@ -166,19 +205,24 @@ export function FrmPowerByBuildingType({
           return (
             <div
               key={`${row.className}-${i}`}
-              className="rounded-lg border border-sf-border/70 bg-black/20 p-1.5 shadow-sm ring-1 ring-white/[0.03] sm:p-2"
+              className="h-auto w-full max-w-full self-start rounded-lg border border-sf-border/70 bg-black/20 p-2 shadow-sm ring-1 ring-white/[0.03] sm:p-2.5"
             >
-              <div className="flex items-start gap-1.5 sm:gap-2">
-                <ItemThumb className={uc} label="" size={32} />
+              <div className="flex items-start gap-2">
+                <ItemThumb className={uc} label={typeLabel} size={34} />
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="min-w-0 truncate text-sm font-medium text-sf-cream">{typeLabel}</p>
+                  <p
+                    className="line-clamp-2 text-[0.8125rem] font-semibold leading-snug text-sf-cream sm:text-sm"
+                    title={typeLabel}
+                  >
+                    {typeLabel}
+                  </p>
+                  <div className="mt-1 flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
+                    <p className="text-[0.65rem] text-sf-muted" title={row.className}>
+                      {t("dashboard.widgets.powerByTypeCount", { count: row.count })}
+                    </p>
                     <span className="shrink-0 font-mono text-xs text-sf-orange">{fmtMw(row.mw)}</span>
                   </div>
-                  <p className="mt-0.5 truncate text-[0.65rem] text-sf-muted" title={row.className}>
-                    {t("dashboard.widgets.powerByTypeCount", { count: row.count })}
-                  </p>
-                  <div className="mt-1">
+                  <div className="mt-1.5">
                     <LinearFractionBar fraction={frac} kind={kind} />
                   </div>
                   {historyEnabled ?
