@@ -183,7 +183,6 @@
     "cutShort": "Off",
     "onShort": "On",
     "buildingPower": "Alimentation",
-    "buildingPowerHint": "L’état affiché est synchronisé après vos actions ; la lecture FRM ne fournit pas toujours l’état ON/OFF courant.",
     "switchPriority": "Priorité groupe : {{n}}"
   },
   "inventory": {

@@ -183,7 +183,6 @@
     "cutShort": "Off",
     "onShort": "On",
     "buildingPower": "Power",
-    "buildingPowerHint": "The displayed state updates after your actions; FRM read APIs do not always expose the current ON/OFF state.",
     "switchPriority": "Priority group: {{n}}"
   },
   "inventory": {

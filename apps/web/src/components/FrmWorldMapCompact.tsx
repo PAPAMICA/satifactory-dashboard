@@ -1,11 +1,20 @@
-import { useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FrmWorldMapDeck } from "@/components/FrmWorldMapDeck";
-import { ProductionBuildingModal } from "@/components/ProductionBuildingModal";
+import type { DeckGLRef } from "@deck.gl/react";
+import { ItemThumb } from "@/components/ItemThumb";
+import {
+  FrmWorldMapDeck,
+  markerDetailForPopup,
+  projectMarkerToPixel,
+} from "@/components/FrmWorldMapDeck";
+import { useOpenBuildingDetail } from "@/contexts/BuildingDetailModalContext";
 import { useFrmMapInfrastructure } from "@/hooks/useFrmMapInfrastructure";
 import { useFrmMapMarkerFilters } from "@/hooks/useFrmMapMarkerFilters";
 import { useFrmRefetchMs } from "@/hooks/useFrmRefetchMs";
+import { apiFetch } from "@/lib/api";
 import { defaultFrmMapLayerVisibility, type FrmMapLayerVisibility } from "@/lib/frmMapOverlays";
+import { frmMarkerMapPosition } from "@/lib/frmMapWorld";
 import { mapInfraToggleCssRgba } from "@/lib/frmMapPalette";
 
 export type FrmWorldMapCompactProps = {
@@ -22,6 +31,12 @@ export function FrmWorldMapCompact({
 }: FrmWorldMapCompactProps) {
   const { t } = useTranslation();
   const refetchMs = useFrmRefetchMs();
+  const openBuildingDetail = useOpenBuildingDetail();
+  const { data: me } = useQuery({
+    queryKey: ["me"],
+    queryFn: () => apiFetch<{ isAdmin?: boolean }>("/api/me"),
+    staleTime: 60_000,
+  });
   const { search, setSearch, hiddenTypes, typesPresent, filtered, fitBoundsKey, toggleType, showAllTypes } =
     useFrmMapMarkerFilters(markers);
   const { overlays, overlayCountKey, isPending: infraPending } = useFrmMapInfrastructure(
@@ -31,7 +46,11 @@ export function FrmWorldMapCompact({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [layersOpen, setLayersOpen] = useState(false);
   const [layerVis, setLayerVis] = useState<FrmMapLayerVisibility>(() => defaultFrmMapLayerVisibility());
+  const [selectedMarker, setSelectedMarker] = useState<Record<string, unknown> | null>(null);
   const [selectedBuilding, setSelectedBuilding] = useState<Record<string, unknown> | null>(null);
+  const [projTick, setProjTick] = useState(0);
+  const deckRef = useRef<DeckGLRef | null>(null);
+  const mapWrapRef = useRef<HTMLDivElement>(null);
 
   const layerVisKey = useMemo(
     () =>
@@ -44,19 +63,58 @@ export function FrmWorldMapCompact({
     [fitBoundsKey, overlayCountKey, layerVisKey],
   );
 
+  const selectedMarkerId = selectedMarker ? String(selectedMarker.ID ?? selectedMarker.Id ?? "") : null;
   const selectedBuildingId = selectedBuilding ? String(selectedBuilding.ID ?? selectedBuilding.Id ?? "") : null;
+
+  const bumpProj = useCallback(() => {
+    setProjTick((n) => n + 1);
+  }, []);
+
+  const onSelectMarker = useCallback((row: Record<string, unknown> | null) => {
+    setSelectedMarker(row);
+    if (row) setSelectedBuilding(null);
+  }, []);
+
+  const onSelectBuilding = useCallback(
+    (row: Record<string, unknown> | null) => {
+      setSelectedBuilding(row);
+      if (row) {
+        setSelectedMarker(null);
+        openBuildingDetail(row, {
+          showMap: false,
+          showAdminControls: Boolean(me?.isAdmin),
+          onClosed: () => setSelectedBuilding(null),
+        });
+      }
+    },
+    [me?.isAdmin, openBuildingDetail],
+  );
+
+  useLayoutEffect(() => {
+    bumpProj();
+  }, [selectedMarker, selectedBuilding, fitBoundsKey, mapAutoFitToken, bumpProj]);
+
+  useLayoutEffect(() => {
+    const el = mapWrapRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => bumpProj());
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [bumpProj]);
+
+  const selectedPos = useMemo(() => (selectedMarker ? frmMarkerMapPosition(selectedMarker) : null), [selectedMarker]);
+
+  const popupPixel = useMemo(() => {
+    if (!selectedPos) return null;
+    const deck = deckRef.current?.deck;
+    return projectMarkerToPixel(deck, selectedPos);
+  }, [selectedPos, projTick]);
 
   const toggleLayer = (k: keyof FrmMapLayerVisibility) => {
     setLayerVis((v) => ({ ...v, [k]: !v[k] }));
   };
 
-  const onSelectMarker = useCallback((_row: Record<string, unknown> | null) => {
-    setSelectedBuilding(null);
-  }, []);
-
-  const onSelectBuilding = useCallback((row: Record<string, unknown> | null) => {
-    setSelectedBuilding(row);
-  }, []);
+  const detail = selectedMarker ? markerDetailForPopup(selectedMarker) : null;
 
   return (
     <div className={`flex min-h-0 flex-1 flex-col gap-2 ${className}`}>
@@ -130,23 +188,59 @@ export function FrmWorldMapCompact({
           </div>
         ) : null}
       </div>
-      <div className="relative flex min-h-[min(32vh,240px)] min-w-0 flex-1 basis-0 flex-col overflow-hidden">
+      <div ref={mapWrapRef} className="relative flex min-h-[min(32vh,240px)] min-w-0 flex-1 basis-0 flex-col overflow-hidden">
         <FrmWorldMapDeck
+          deckRef={deckRef}
+          onDeckLoad={bumpProj}
+          onAfterViewStateChange={bumpProj}
           markers={filtered}
           autoFitToken={mapAutoFitToken}
           worldOverlays={overlays}
           layerVisibility={layerVis}
           scrollWheelZoom={scrollWheelZoom}
-          selectedId={null}
+          selectedId={selectedMarkerId}
           selectedBuildingId={selectedBuildingId}
           onSelectMarker={onSelectMarker}
           onSelectBuilding={onSelectBuilding}
           className="min-h-0 flex-1"
         />
+        {detail && popupPixel ? (
+          <div
+            className="pointer-events-auto absolute z-10 max-w-[min(260px,calc(100%-16px))] rounded border border-sf-border-bright bg-[#1a1814] p-3 shadow-lg"
+            style={(() => {
+              const cw = mapWrapRef.current?.clientWidth ?? 400;
+              const panel = Math.min(260, cw - 16);
+              const left = Math.max(8, Math.min(popupPixel[0] + 10, cw - panel - 8));
+              return {
+                left,
+                top: Math.max(8, popupPixel[1] - 8),
+                transform: "translateY(-100%)",
+              };
+            })()}
+          >
+            <button
+              type="button"
+              className="absolute right-1 top-1 rounded px-1.5 text-xs text-sf-muted hover:bg-white/10 hover:text-sf-cream"
+              onClick={() => setSelectedMarker(null)}
+              aria-label={t("monitoring.mapDetailDismiss")}
+            >
+              ×
+            </button>
+            <div className="flex gap-2 pr-5">
+              <ItemThumb className={detail.thumb} label="" size={40} />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold leading-tight text-sf-cream">{detail.nm}</p>
+                <p className="mt-0.5 font-mono text-[0.65rem] text-sf-muted">{detail.typ}</p>
+                <p className="mt-1 font-mono text-[0.65rem] text-sf-muted">
+                  {Number.isFinite(Number(detail.x)) ? Math.round(Number(detail.x)) : "—"},{" "}
+                  {Number.isFinite(Number(detail.y)) ? Math.round(Number(detail.y)) : "—"},{" "}
+                  {Number.isFinite(Number(detail.z)) ? Math.round(Number(detail.z)) : "—"}
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
-      {selectedBuilding ?
-        <ProductionBuildingModal row={selectedBuilding} onClose={() => setSelectedBuilding(null)} showMap={false} />
-      : null}
     </div>
   );
 }

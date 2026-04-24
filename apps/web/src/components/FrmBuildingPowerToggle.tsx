@@ -86,9 +86,6 @@ export function FrmBuildingPowerToggle({ buildingId, buildingClassName, title, s
             onToggle={() => mut.mutate(!guess)}
             compact={compact}
           />
-          <p className="max-w-[14rem] text-center text-[0.58rem] leading-snug text-sf-muted/90 sm:text-right">
-            {t("control.buildingPowerHint")}
-          </p>
         </div>
       </div>
       {err ? <p className="mt-2 text-center text-[0.65rem] text-sf-danger sm:text-left">{err}</p> : null}

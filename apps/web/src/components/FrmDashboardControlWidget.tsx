@@ -142,7 +142,7 @@ export function FrmDashboardControlWidget({ editMode }: Props) {
                 </div>
               </button>
               <div className="flex shrink-0 items-center justify-between gap-2 sm:flex-col sm:items-end">
-                <FrmIndustrialLever compact on={on} busy={busy} onToggle={() => swMut.mutate({ id, status: !on })} />
+                <FrmIndustrialLever compact showLabels={false} on={on} busy={busy} onToggle={() => swMut.mutate({ id, status: !on })} />
                 {editMode ?
                   <button
                     type="button"
@@ -182,7 +182,7 @@ export function FrmDashboardControlWidget({ editMode }: Props) {
               </div>
             </button>
             <div className="flex shrink-0 items-center justify-between gap-2 sm:flex-col sm:items-end">
-              <FrmIndustrialLever compact on={on} busy={busy} onToggle={() => enMut.mutate({ id, status: !on })} />
+              <FrmIndustrialLever compact showLabels={false} on={on} busy={busy} onToggle={() => enMut.mutate({ id, status: !on })} />
               {editMode ?
                 <button
                   type="button"

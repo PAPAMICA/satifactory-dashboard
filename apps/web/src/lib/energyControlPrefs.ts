@@ -9,6 +9,15 @@ export type EnergyControlPrefs = {
 
 const EV = "sf-energy-prefs-changed";
 
+/** Dernière chaîne lue dans localStorage — pour un snapshot stable avec `useSyncExternalStore`. */
+let cachedLsRaw: string | null = null;
+let cachedSnapshot: EnergyControlPrefs = {
+  favoriteSwitchIds: [],
+  favoriteBuildingIds: [],
+  switchAliases: {},
+  buildingAliases: {},
+};
+
 function defaultPrefs(): EnergyControlPrefs {
   return {
     favoriteSwitchIds: [],
@@ -18,25 +27,45 @@ function defaultPrefs(): EnergyControlPrefs {
   };
 }
 
+function normalizePrefs(o: Partial<EnergyControlPrefs>): EnergyControlPrefs {
+  return {
+    favoriteSwitchIds: Array.isArray(o.favoriteSwitchIds) ? o.favoriteSwitchIds.map(String) : [],
+    favoriteBuildingIds: Array.isArray(o.favoriteBuildingIds) ? o.favoriteBuildingIds.map(String) : [],
+    switchAliases: o.switchAliases && typeof o.switchAliases === "object" ? { ...o.switchAliases } : {},
+    buildingAliases: o.buildingAliases && typeof o.buildingAliases === "object" ? { ...o.buildingAliases } : {},
+  };
+}
+
 export function readEnergyControlPrefs(): EnergyControlPrefs {
   try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return defaultPrefs();
+    const raw = localStorage.getItem(LS_KEY) ?? "";
+    if (raw === cachedLsRaw) return cachedSnapshot;
+    cachedLsRaw = raw;
+    if (!raw) {
+      cachedSnapshot = defaultPrefs();
+      return cachedSnapshot;
+    }
     const o = JSON.parse(raw) as Partial<EnergyControlPrefs>;
-    return {
-      favoriteSwitchIds: Array.isArray(o.favoriteSwitchIds) ? o.favoriteSwitchIds.map(String) : [],
-      favoriteBuildingIds: Array.isArray(o.favoriteBuildingIds) ? o.favoriteBuildingIds.map(String) : [],
-      switchAliases: o.switchAliases && typeof o.switchAliases === "object" ? o.switchAliases : {},
-      buildingAliases: o.buildingAliases && typeof o.buildingAliases === "object" ? o.buildingAliases : {},
-    };
+    cachedSnapshot = normalizePrefs(o);
+    return cachedSnapshot;
   } catch {
-    return defaultPrefs();
+    cachedSnapshot = defaultPrefs();
+    return cachedSnapshot;
   }
 }
 
 function writePrefs(p: EnergyControlPrefs): void {
+  const frozen: EnergyControlPrefs = {
+    favoriteSwitchIds: [...p.favoriteSwitchIds],
+    favoriteBuildingIds: [...p.favoriteBuildingIds],
+    switchAliases: { ...p.switchAliases },
+    buildingAliases: { ...p.buildingAliases },
+  };
   try {
-    localStorage.setItem(LS_KEY, JSON.stringify(p));
+    const raw = JSON.stringify(frozen);
+    localStorage.setItem(LS_KEY, raw);
+    cachedLsRaw = raw;
+    cachedSnapshot = frozen;
     window.dispatchEvent(new Event(EV));
   } catch {
     /* ignore */

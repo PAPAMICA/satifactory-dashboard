@@ -1,18 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { FactoryLocationMap } from "@/components/FactoryLocationMap";
 import { FrmBuildingPowerToggle } from "@/components/FrmBuildingPowerToggle";
 import { ItemThumb } from "@/components/ItemThumb";
@@ -81,6 +70,26 @@ function isGeneratorFrmRow(r: Record<string, unknown>): boolean {
   );
 }
 
+function efficiencyToneClasses(pct: number): string {
+  const n = clampPct(pct);
+  if (n >= 90) return "border-emerald-600/45 bg-emerald-950/70 text-emerald-200";
+  if (n >= 70) return "border-lime-600/40 bg-lime-950/40 text-lime-100";
+  if (n >= 45) return "border-amber-600/45 bg-amber-950/60 text-amber-100";
+  if (n >= 20) return "border-sf-orange/50 bg-sf-orange/15 text-sf-orange";
+  return "border-red-700/50 bg-red-950/70 text-red-200";
+}
+
+function EfficiencyCapsule({ pct }: { pct: number }) {
+  const n = clampPct(pct);
+  return (
+    <span
+      className={`shrink-0 rounded-md border px-1.5 py-0.5 font-mono text-[0.65rem] tabular-nums ${efficiencyToneClasses(n)}`}
+    >
+      {formatDecimalSpaces(n, 1)}%
+    </span>
+  );
+}
+
 function ProductionRateTextBlock({
   titleKey,
   lines,
@@ -108,16 +117,22 @@ function ProductionRateTextBlock({
             mode === "out" ?
               Number(line.MaxProd ?? line.maxProd) || 0
             : Number(line.MaxConsumed ?? line.maxConsumed) || 0;
+          const effRaw =
+            mode === "out" ? (line.ProdPercent ?? line.prodPercent) : (line.ConsPercent ?? line.consPercent);
+          const effN = clampPct(effRaw);
           return (
             <li
               key={`${String(line.ClassName)}-${i}`}
-              className="flex flex-wrap items-baseline justify-between gap-x-2 border-b border-sf-border/15 py-1.5 last:border-b-0"
+              className="space-y-1 border-b border-sf-border/15 py-1.5 last:border-b-0"
             >
-              <span className="min-w-0 flex-1 truncate">{label}</span>
-              <span className="shrink-0 font-mono text-[0.72rem] text-sf-orange tabular-nums">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="min-w-0 flex-1 truncate">{label}</span>
+                <EfficiencyCapsule pct={effN} />
+              </div>
+              <p className="text-right font-mono text-[0.72rem] text-sf-orange tabular-nums">
                 {formatDecimalSpaces(cur, 2)} / {formatDecimalSpaces(max, 2)}{" "}
                 <span className="text-[0.6rem] font-normal text-sf-muted">{t("monitoring.buildingModalCeilingShort")}</span>
-              </span>
+              </p>
             </li>
           );
         })}
@@ -166,52 +181,6 @@ function clampPct(v: unknown): number {
   const n = Number(v);
   if (!Number.isFinite(n)) return 0;
   return Math.max(0, Math.min(100, n));
-}
-
-function ProductionEfficiencyBarChart({
-  prodLines,
-  ingLines,
-  height,
-}: {
-  prodLines: ProductionLine[];
-  ingLines: ProductionLine[];
-  height: number;
-}) {
-  const { t } = useTranslation();
-  const outAvg =
-    prodLines.length ?
-      prodLines.reduce((s, l) => s + clampPct(l.ProdPercent ?? l.prodPercent), 0) / prodLines.length
-    : 0;
-  const inAvg =
-    ingLines.length ?
-      ingLines.reduce((s, l) => s + clampPct(l.ConsPercent ?? l.consPercent), 0) / ingLines.length
-    : 0;
-  const data = useMemo(
-    () => [
-      { name: t("monitoring.buildingModalEffBarOutputs"), pct: Math.round(outAvg * 10) / 10 },
-      { name: t("monitoring.buildingModalEffBarInputs"), pct: Math.round(inAvg * 10) / 10 },
-    ],
-    [t, outAvg, inAvg],
-  );
-  if (!prodLines.length && !ingLines.length) {
-    return <p className="text-xs text-sf-muted">{t("monitoring.productionRecipeEmpty")}</p>;
-  }
-  return (
-    <div style={{ height, minHeight: height }} className="w-full min-w-0">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} layout="vertical" margin={{ left: 4, right: 8, top: 4, bottom: 4 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#3d3528" horizontal={false} />
-          <XAxis type="number" domain={[0, 100]} tick={{ fill: "#8a7f6e", fontSize: 9 }} />
-          <YAxis type="category" dataKey="name" width={88} tick={{ fill: "#8a7f6e", fontSize: 9 }} />
-          <Tooltip
-            contentStyle={{ background: "#1a1814", border: "1px solid #3d3528", borderRadius: 4, fontSize: 11 }}
-            formatter={(v: number) => [`${formatDecimalSpaces(v, 1)} %`, t("monitoring.buildingModalEfficiencyPct")]}
-          />
-          <Bar dataKey="pct" name="%" fill="#f59e0b" radius={[0, 4, 4, 0]} />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  );
 }
 
 function GeneratorMwSupLineChart({
@@ -486,17 +455,6 @@ export function ProductionBuildingModal({ row, onClose, showMap = true, showAdmi
         </div>
       : null}
 
-      {frmOk && !isPublic && !isGenerator && (prodLines.length > 0 || ingLines.length > 0) ?
-        <div className="rounded-lg border border-sf-border/70 bg-black/20 p-3">
-          <p className="text-[0.65rem] font-medium uppercase tracking-wider text-sf-muted">
-            {t("monitoring.buildingModalEfficiencyMixTitle")}
-          </p>
-          <div className="mt-2">
-            <ProductionEfficiencyBarChart prodLines={prodLines} ingLines={ingLines} height={CHART_H} />
-          </div>
-        </div>
-      : null}
-
       {frmOk && isGenerator ?
         <div className="rounded-lg border border-sf-border/70 bg-black/20 p-3">
           <p className="text-[0.65rem] font-medium uppercase tracking-wider text-sf-muted">
@@ -599,19 +557,17 @@ export function ProductionBuildingModal({ row, onClose, showMap = true, showAdmi
           <div className="flex min-w-0 flex-1 items-start gap-2.5">
             <ItemThumb className={thumbCls} label={primary} size={showMap ? 44 : 36} />
             <div className="min-w-0">
-              <h2
-                id="production-building-modal-title"
-                className={`sf-display font-semibold text-sf-cream ${showMap ? "text-base sm:text-lg" : "text-sm sm:text-base"}`}
-              >
-                {primary}
-              </h2>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2
+                  id="production-building-modal-title"
+                  className={`sf-display min-w-0 font-semibold text-sf-cream ${showMap ? "text-base sm:text-lg" : "text-sm sm:text-base"}`}
+                >
+                  {primary}
+                </h2>
+                {!isGenerator ? <EfficiencyCapsule pct={effPct} /> : null}
+              </div>
               {secondary ?
                 <p className="mt-0.5 truncate text-xs text-sf-muted">{secondary}</p>
-              : null}
-              {!isGenerator ?
-                <p className="mt-1 font-mono text-[0.65rem] text-sf-muted">
-                  {t("monitoring.productionFilterEfficiency")}: {formatDecimalSpaces(effPct, 1)}%
-                </p>
               : null}
             </div>
           </div>
