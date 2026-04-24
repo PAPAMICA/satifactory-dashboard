@@ -9,11 +9,19 @@ import { useFrmRefetchMs } from "@/hooks/useFrmRefetchMs";
 import { apiFetch } from "@/lib/api";
 import { asFrmRowArray } from "@/lib/frmRows";
 import { frmGetUrl } from "@/lib/frmApi";
-import { parseSetEnabledStatus, postSetEnabled, readCachedBuildingEnabled } from "@/lib/frmControl";
+import {
+  cacheBuildingEnabled,
+  parseSetEnabledStatus,
+  postSetEnabled,
+  readCachedBuildingEnabled,
+} from "@/lib/frmControl";
 import { frmgClassLabel } from "@/lib/dashboardFrmgDisplay";
 import { factoryBuildingPrimarySecondary } from "@/components/ProductionBuildingModal";
 import { factoryBuildingClassForThumb } from "@/lib/productionFrm";
 import { normalizeBuildClassName } from "@/lib/monitoringFrm";
+import { FrmIndustrialLever } from "@/components/FrmIndustrialLever";
+import { useOpenBuildingDetail } from "@/contexts/BuildingDetailModalContext";
+import { rowSupportsSetEnabled } from "@/lib/frmBuildingPowerPolicy";
 
 function useSetEnabledMut() {
   const qc = useQueryClient();
@@ -34,12 +42,14 @@ function FactoryEnableRow({
   row,
   lang,
   mut,
+  isAdmin,
 }: {
   row: Record<string, unknown>;
   lang: string;
   mut: ReturnType<typeof useSetEnabledMut>;
+  isAdmin: boolean;
 }) {
-  const { t } = useTranslation();
+  const openBuildingDetail = useOpenBuildingDetail();
   const id = String(row.ID ?? row.Id ?? "").trim();
   const thumb = factoryBuildingClassForThumb(row);
   const { primary, secondary } = factoryBuildingPrimarySecondary(row, lang);
@@ -47,44 +57,44 @@ function FactoryEnableRow({
   const [local, setLocal] = useState<boolean | null>(cached ?? null);
   const guess = local ?? true;
   const busy = mut.isPending && mut.variables?.ID === id;
+  const canPower = rowSupportsSetEnabled(row);
 
   if (!id) return null;
 
   return (
     <li className="flex flex-col gap-2 rounded-xl border border-sf-border/60 bg-black/25 p-3 ring-1 ring-white/[0.03] sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex min-w-0 flex-1 items-center gap-2.5">
+      <button
+        type="button"
+        className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg border border-transparent text-left transition-colors hover:border-sf-orange/30 hover:bg-white/[0.04]"
+        onClick={() => openBuildingDetail(row, { showMap: true, showAdminControls: isAdmin })}
+      >
         <ItemThumb className={thumb} label="" size={36} />
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-sf-cream">{primary}</p>
           {secondary ? <p className="truncate text-xs text-sf-muted">{secondary}</p> : null}
         </div>
-      </div>
-      <div className="flex shrink-0 items-center gap-2">
-        <span
-          className={`rounded px-2 py-0.5 font-mono text-[0.6rem] ${guess ? "bg-sf-ok/15 text-sf-ok" : "bg-sf-orange/15 text-sf-orange"}`}
-        >
-          {guess ? t("control.stateOn") : t("control.stateOff")}
-        </span>
-        <button
-          type="button"
-          disabled={busy}
-          className="sf-btn min-h-8 px-2.5 text-xs"
-          onClick={() => {
-            const next = !guess;
-            mut.mutate(
-              { ID: id, status: next },
-              {
-                onSuccess: (data) => {
-                  const p = parseSetEnabledStatus(data);
-                  setLocal(p ?? next);
+      </button>
+      {canPower ?
+        <div className="flex shrink-0 items-center gap-2">
+          <FrmIndustrialLever
+            compact
+            on={guess}
+            busy={busy}
+            onToggle={() => {
+              const next = !guess;
+              mut.mutate(
+                { ID: id, status: next },
+                {
+                  onSuccess: (data) => {
+                    const p = parseSetEnabledStatus(data);
+                    setLocal(p ?? next);
+                  },
                 },
-              },
-            );
-          }}
-        >
-          {busy ? "…" : guess ? t("control.cutPower") : t("control.restorePower")}
-        </button>
-      </div>
+              );
+            }}
+          />
+        </div>
+      : null}
     </li>
   );
 }
@@ -93,12 +103,14 @@ function GeneratorEnableRow({
   row,
   lang,
   mut,
+  isAdmin,
 }: {
   row: Record<string, unknown>;
   lang: string;
   mut: ReturnType<typeof useSetEnabledMut>;
+  isAdmin: boolean;
 }) {
-  const { t } = useTranslation();
+  const openBuildingDetail = useOpenBuildingDetail();
   const idRaw = row.ID ?? row.Id ?? row.id;
   const id = String(idRaw ?? "").trim();
   const rawClass = String(row.ClassName ?? row.className ?? "").trim();
@@ -110,44 +122,44 @@ function GeneratorEnableRow({
   const [local, setLocal] = useState<boolean | null>(cached ?? null);
   const guess = local ?? true;
   const busy = mut.isPending && mut.variables?.ID === id;
+  const canPower = rowSupportsSetEnabled(row);
 
   if (!id) return null;
 
   return (
     <li className="flex flex-col gap-2 rounded-xl border border-sf-border/60 bg-black/25 p-3 ring-1 ring-white/[0.03] sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex min-w-0 flex-1 items-center gap-2.5">
+      <button
+        type="button"
+        className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg border border-transparent text-left transition-colors hover:border-sf-orange/30 hover:bg-white/[0.04]"
+        onClick={() => openBuildingDetail(row, { showMap: true, showAdminControls: isAdmin })}
+      >
         <ItemThumb className={imgClass} label="" size={36} />
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-sf-cream">{nm}</p>
           <p className="truncate text-xs text-sf-muted">{typeLbl}</p>
         </div>
-      </div>
-      <div className="flex shrink-0 items-center gap-2">
-        <span
-          className={`rounded px-2 py-0.5 font-mono text-[0.6rem] ${guess ? "bg-sf-ok/15 text-sf-ok" : "bg-sf-orange/15 text-sf-orange"}`}
-        >
-          {guess ? t("control.stateOn") : t("control.stateOff")}
-        </span>
-        <button
-          type="button"
-          disabled={busy}
-          className="sf-btn min-h-8 px-2.5 text-xs"
-          onClick={() => {
-            const next = !guess;
-            mut.mutate(
-              { ID: id, status: next },
-              {
-                onSuccess: (data) => {
-                  const p = parseSetEnabledStatus(data);
-                  setLocal(p ?? next);
+      </button>
+      {canPower ?
+        <div className="flex shrink-0 items-center gap-2">
+          <FrmIndustrialLever
+            compact
+            on={guess}
+            busy={busy}
+            onToggle={() => {
+              const next = !guess;
+              mut.mutate(
+                { ID: id, status: next },
+                {
+                  onSuccess: (data) => {
+                    const p = parseSetEnabledStatus(data);
+                    setLocal(p ?? next);
+                  },
                 },
-              },
-            );
-          }}
-        >
-          {busy ? "…" : guess ? t("control.cutPower") : t("control.restorePower")}
-        </button>
-      </div>
+              );
+            }}
+          />
+        </div>
+      : null}
     </li>
   );
 }
@@ -155,6 +167,12 @@ function GeneratorEnableRow({
 function ControlPageBody() {
   const { t, i18n } = useTranslation();
   const refetchMs = useFrmRefetchMs();
+  const { data: me } = useQuery({
+    queryKey: ["me"],
+    queryFn: () => apiFetch<{ isAdmin?: boolean }>("/api/me"),
+    staleTime: 60_000,
+  });
+  const isAdmin = Boolean(me?.isAdmin);
   const [factoryQ, setFactoryQ] = useState("");
   const fq = useQuery({
     queryKey: ["frm", "getFactory"],
@@ -236,7 +254,7 @@ function ControlPageBody() {
           : (
             <ul className="space-y-2">
               {factoriesFiltered.slice(0, 400).map((r, i) => (
-                <FactoryEnableRow key={String(r.ID ?? i)} row={r} lang={i18n.language} mut={mut} />
+                <FactoryEnableRow key={String(r.ID ?? i)} row={r} lang={i18n.language} mut={mut} isAdmin={isAdmin} />
               ))}
             </ul>
           )}
@@ -258,7 +276,13 @@ function ControlPageBody() {
           : (
             <ul className="space-y-2">
               {genSlice.map((r, i) => (
-                <GeneratorEnableRow key={String(r.ID ?? r.ClassName ?? i)} row={r} lang={i18n.language} mut={mut} />
+                <GeneratorEnableRow
+                  key={String(r.ID ?? r.ClassName ?? i)}
+                  row={r}
+                  lang={i18n.language}
+                  mut={mut}
+                  isAdmin={isAdmin}
+                />
               ))}
             </ul>
           )}

@@ -3,11 +3,8 @@ import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FicsitPageLoader } from "@/components/FicsitPageLoader";
 import { ItemThumb } from "@/components/ItemThumb";
-import {
-  factoryBuildingPrimarySecondary,
-  ProductionBuildingModal,
-  RecipeOutputsList,
-} from "@/components/ProductionBuildingModal";
+import { factoryBuildingPrimarySecondary, RecipeOutputsList } from "@/components/ProductionBuildingModal";
+import { useOpenBuildingDetail } from "@/contexts/BuildingDetailModalContext";
 import { MonitoringGate } from "@/components/MonitoringGate";
 import { useFrmRefetchMs } from "@/hooks/useFrmRefetchMs";
 import { apiFetch } from "@/lib/api";
@@ -84,6 +81,7 @@ type ProductionSortDir = "asc" | "desc";
 function ProductionPageBody() {
   const { t, i18n } = useTranslation();
   const refetchMs = useFrmRefetchMs();
+  const openBuildingDetail = useOpenBuildingDetail();
   const { data: me } = useQuery({
     queryKey: ["me"],
     queryFn: () => apiFetch<{ isAdmin?: boolean }>("/api/me"),
@@ -95,7 +93,6 @@ function ProductionPageBody() {
   const [effFilter, setEffFilter] = useState<ProductionEffFilter>("all");
   const [sortKey, setSortKey] = useState<ProductionSortKey>("name");
   const [sortDir, setSortDir] = useState<ProductionSortDir>("asc");
-  const [selected, setSelected] = useState<Record<string, unknown> | null>(null);
 
   const q = useQuery({
     queryKey: ["frm", "getFactory"],
@@ -156,7 +153,10 @@ function ProductionPageBody() {
 
   const shown = sorted.slice(0, MAX_ROWS);
 
-  const openRow = useCallback((r: Record<string, unknown>) => setSelected(r), []);
+  const openRow = useCallback(
+    (r: Record<string, unknown>) => openBuildingDetail(r, { showMap: true, showAdminControls: Boolean(me?.isAdmin) }),
+    [me?.isAdmin, openBuildingDetail],
+  );
 
   return (
     <div className="w-full min-w-0 space-y-4">
@@ -343,14 +343,6 @@ function ProductionPageBody() {
         )}
       </div>
 
-      {selected ?
-        <ProductionBuildingModal
-          row={selected}
-          onClose={() => setSelected(null)}
-          showMap
-          showAdminControls={Boolean(me?.isAdmin)}
-        />
-      : null}
     </div>
   );
 }

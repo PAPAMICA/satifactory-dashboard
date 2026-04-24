@@ -2,6 +2,8 @@ import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
   Legend,
   Line,
@@ -15,13 +17,13 @@ import { FactoryLocationMap } from "@/components/FactoryLocationMap";
 import { FrmBuildingPowerToggle } from "@/components/FrmBuildingPowerToggle";
 import { ItemThumb } from "@/components/ItemThumb";
 import { useGeneratorSnapshotHistory } from "@/hooks/useGeneratorSnapshotHistory";
-import { usePowerUsageMwByClassHistory } from "@/hooks/usePowerUsageMwByClassHistory";
+import { usePowerUsageMwByBuildingIdHistory } from "@/hooks/usePowerUsageMwByBuildingIdHistory";
 import { frmgClassLabel } from "@/lib/dashboardFrmgDisplay";
 import { normalizeFrmBuildingClassName } from "@/lib/frmFactoryMapCategory";
 import { frmGetUrl } from "@/lib/frmApi";
 import { formatDecimalSpaces, formatIntegerSpaces } from "@/lib/formatNumber";
 import { generatorMwLive, normalizeBuildClassName } from "@/lib/monitoringFrm";
-import { formatChartAxisTime, type PowerHistoryApiPoint } from "@/lib/powerHistoryChart";
+import { rowSupportsSetEnabled } from "@/lib/frmBuildingPowerPolicy";
 import { itemLabel } from "@/lib/itemCatalog";
 import { apiFetch } from "@/lib/api";
 import { asFrmRowArray } from "@/lib/frmRows";
@@ -124,42 +126,7 @@ function ProductionRateTextBlock({
   );
 }
 
-function PowerGridDualLineChart({
-  points,
-  height,
-}: {
-  points: { t: string; production: number; consumption: number }[];
-  height: number;
-}) {
-  const { t } = useTranslation();
-  if (points.length < 2) {
-    return <p className="text-xs text-sf-muted">{t("monitoring.buildingModalTrendNeedSamples")}</p>;
-  }
-  return (
-    <div style={{ height, minHeight: height }} className="w-full min-w-0">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={points} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#3d3528" />
-          <XAxis dataKey="t" tick={{ fill: "#8a7f6e", fontSize: 9 }} interval="preserveStartEnd" minTickGap={24} />
-          <YAxis
-            width={36}
-            tick={{ fill: "#8a7f6e", fontSize: 9 }}
-            tickFormatter={(v) => `${formatDecimalSpaces(Number(v), 0)}`}
-          />
-          <Tooltip
-            contentStyle={{ background: "#1a1814", border: "1px solid #3d3528", borderRadius: 4, fontSize: 11 }}
-            formatter={(v: number, name: string) => [formatDecimalSpaces(v, 2), name]}
-          />
-          <Legend wrapperStyle={{ fontSize: 10 }} />
-          <Line type="monotone" dataKey="production" name={t("monitoring.buildingModalLegendProdMw")} stroke="#7cfc8a" dot={false} strokeWidth={1.5} isAnimationActive={false} />
-          <Line type="monotone" dataKey="consumption" name={t("monitoring.buildingModalLegendConsMw")} stroke="#5fd4ff" dot={false} strokeWidth={1.5} isAnimationActive={false} />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
-function ClassMwLineChart({ values, height }: { values: number[]; height: number }) {
+function BuildingMwLineChart({ values, height }: { values: number[]; height: number }) {
   const { t } = useTranslation();
   const data = useMemo(() => values.map((mw, i) => ({ i, mw })), [values]);
   if (data.length < 2) {
@@ -172,16 +139,76 @@ function ClassMwLineChart({ values, height }: { values: number[]; height: number
           <CartesianGrid strokeDasharray="3 3" stroke="#3d3528" />
           <XAxis dataKey="i" hide />
           <YAxis
-            width={36}
+            width={40}
             tick={{ fill: "#8a7f6e", fontSize: 9 }}
-            tickFormatter={(v) => `${formatDecimalSpaces(Number(v), 0)}`}
+            tickFormatter={(v) => `${formatDecimalSpaces(Number(v), 1)}`}
           />
           <Tooltip
             contentStyle={{ background: "#1a1814", border: "1px solid #3d3528", borderRadius: 4, fontSize: 11 }}
-            formatter={(v: number) => [`${formatDecimalSpaces(v, 2)} MW`, t("monitoring.buildingModalClassMwTitle")]}
+            formatter={(v: number) => [`${formatDecimalSpaces(v, 2)} MW`, t("monitoring.buildingModalSelfMwTitle")]}
           />
-          <Line type="monotone" dataKey="mw" name="MW" stroke="#f59e0b" dot={false} strokeWidth={1.5} isAnimationActive={false} />
+          <Line
+            type="monotone"
+            dataKey="mw"
+            name="MW"
+            stroke="#5fd4ff"
+            dot={false}
+            strokeWidth={1.75}
+            isAnimationActive={false}
+          />
         </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function clampPct(v: unknown): number {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(100, n));
+}
+
+function ProductionEfficiencyBarChart({
+  prodLines,
+  ingLines,
+  height,
+}: {
+  prodLines: ProductionLine[];
+  ingLines: ProductionLine[];
+  height: number;
+}) {
+  const { t } = useTranslation();
+  const outAvg =
+    prodLines.length ?
+      prodLines.reduce((s, l) => s + clampPct(l.ProdPercent ?? l.prodPercent), 0) / prodLines.length
+    : 0;
+  const inAvg =
+    ingLines.length ?
+      ingLines.reduce((s, l) => s + clampPct(l.ConsPercent ?? l.consPercent), 0) / ingLines.length
+    : 0;
+  const data = useMemo(
+    () => [
+      { name: t("monitoring.buildingModalEffBarOutputs"), pct: Math.round(outAvg * 10) / 10 },
+      { name: t("monitoring.buildingModalEffBarInputs"), pct: Math.round(inAvg * 10) / 10 },
+    ],
+    [t, outAvg, inAvg],
+  );
+  if (!prodLines.length && !ingLines.length) {
+    return <p className="text-xs text-sf-muted">{t("monitoring.productionRecipeEmpty")}</p>;
+  }
+  return (
+    <div style={{ height, minHeight: height }} className="w-full min-w-0">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} layout="vertical" margin={{ left: 4, right: 8, top: 4, bottom: 4 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#3d3528" horizontal={false} />
+          <XAxis type="number" domain={[0, 100]} tick={{ fill: "#8a7f6e", fontSize: 9 }} />
+          <YAxis type="category" dataKey="name" width={88} tick={{ fill: "#8a7f6e", fontSize: 9 }} />
+          <Tooltip
+            contentStyle={{ background: "#1a1814", border: "1px solid #3d3528", borderRadius: 4, fontSize: 11 }}
+            formatter={(v: number) => [`${formatDecimalSpaces(v, 1)} %`, t("monitoring.buildingModalEfficiencyPct")]}
+          />
+          <Bar dataKey="pct" name="%" fill="#f59e0b" radius={[0, 4, 4, 0]} />
+        </BarChart>
       </ResponsiveContainer>
     </div>
   );
@@ -290,7 +317,6 @@ export function ProductionBuildingModal({ row, onClose, showMap = true, showAdmi
   const prodLines = factoryProductionLines(row);
   const ingLines = factoryIngredientLines(row);
   const isGenerator = isGeneratorFrmRow(row);
-  const classNorm = normalizeBuildClassName(String(row.ClassName ?? row.className ?? ""));
 
   const { data: settings } = useQuery({
     queryKey: ["settings"],
@@ -303,8 +329,9 @@ export function ProductionBuildingModal({ row, onClose, showMap = true, showAdmi
     staleTime: 60_000,
   });
   const isPublic = Boolean(me?.isPublicViewer);
-  const adminPowerToggle =
-    Boolean(showAdminControls && me?.isAdmin && !isPublic && buildingId);
+  const adminPowerToggle = Boolean(
+    showAdminControls && me?.isAdmin && !isPublic && buildingId && rowSupportsSetEnabled(row),
+  );
   const frmOk = Boolean(settings?.frmTokenConfigured);
   const interval = settings?.pollIntervalMs ?? 10_000;
 
@@ -317,29 +344,16 @@ export function ProductionBuildingModal({ row, onClose, showMap = true, showAdmi
     enabled: frmOk && !isPublic && !isGenerator,
   });
   const usageRows = asFrmRowArray(usageQ.data);
-  const { getSeries } = usePowerUsageMwByClassHistory(usageRows, usageQ.dataUpdatedAt, frmOk && !isPublic && !isGenerator);
-  const classMwSeries = useMemo(() => getSeries(classNorm), [getSeries, classNorm]);
-
-  const windowMin = 60;
-  const powerHistQ = useQuery({
-    queryKey: ["metrics", "power", "history", windowMin, 200],
-    queryFn: () =>
-      apiFetch<{ points: PowerHistoryApiPoint[] }>(
-        `/api/metrics/power/history?minutes=${windowMin}&maxPoints=200`,
-      ),
-    enabled: frmOk && !isPublic,
-    staleTime: 60_000,
-  });
-  const gridChartPoints = useMemo(() => {
-    const pts = powerHistQ.data?.points ?? [];
-    const lang = i18n.language;
-    return pts.map((p) => ({
-      tsMs: p.tsMs,
-      t: formatChartAxisTime(p.tsMs, windowMin, lang),
-      production: Math.round(p.production * 10) / 10,
-      consumption: Math.round(p.consumption * 10) / 10,
-    }));
-  }, [powerHistQ.data, i18n.language]);
+  const { getSeries: getBuildingMwSeries, sampleCount: buildingMwSampleCount } = usePowerUsageMwByBuildingIdHistory(
+    usageRows,
+    usageQ.dataUpdatedAt,
+    frmOk && !isPublic && !isGenerator,
+    buildingId,
+  );
+  const buildingMwVals = useMemo(
+    () => getBuildingMwSeries(),
+    [getBuildingMwSeries, buildingMwSampleCount],
+  );
 
   const genListQ = useQuery({
     queryKey: ["frm", "getGenerators"],
@@ -400,7 +414,13 @@ export function ProductionBuildingModal({ row, onClose, showMap = true, showAdmi
       className={`flex min-h-0 w-full flex-col gap-3 overflow-y-auto p-4 sm:p-5 ${showMap ? "lg:w-[58%] lg:shrink-0 lg:border-r lg:border-sf-border/40 lg:pr-5" : "max-w-xl flex-1"}`}
     >
       {adminPowerToggle ?
-        <FrmBuildingPowerToggle buildingId={buildingId} title={primary} subtitle={secondary} compact={!showMap} />
+        <FrmBuildingPowerToggle
+          buildingId={buildingId}
+          buildingClassName={String(row.ClassName ?? row.className ?? "")}
+          title={primary}
+          subtitle={secondary}
+          compact={!showMap}
+        />
       : null}
 
       {isGenerator ?
@@ -455,24 +475,24 @@ export function ProductionBuildingModal({ row, onClose, showMap = true, showAdmi
         </div>
       : null}
 
-      {frmOk && !isPublic ?
+      {frmOk && !isPublic && !isGenerator && buildingId ?
         <div className="rounded-lg border border-sf-border/70 bg-black/20 p-3">
           <p className="text-[0.65rem] font-medium uppercase tracking-wider text-sf-muted">
-            {t("monitoring.buildingModalGridPowerTitle")}
+            {t("monitoring.buildingModalSelfMwTitle")}
           </p>
           <div className="mt-2">
-            <PowerGridDualLineChart points={gridChartPoints} height={CHART_H} />
+            <BuildingMwLineChart values={buildingMwVals} height={CHART_H} />
           </div>
         </div>
       : null}
 
-      {frmOk && !isPublic && !isGenerator ?
+      {frmOk && !isPublic && !isGenerator && (prodLines.length > 0 || ingLines.length > 0) ?
         <div className="rounded-lg border border-sf-border/70 bg-black/20 p-3">
           <p className="text-[0.65rem] font-medium uppercase tracking-wider text-sf-muted">
-            {t("monitoring.buildingModalClassMwTitle")}
+            {t("monitoring.buildingModalEfficiencyMixTitle")}
           </p>
           <div className="mt-2">
-            <ClassMwLineChart values={classMwSeries} height={CHART_H} />
+            <ProductionEfficiencyBarChart prodLines={prodLines} ingLines={ingLines} height={CHART_H} />
           </div>
         </div>
       : null}

@@ -10,7 +10,7 @@ import {
 import { useFrmMapInfrastructure } from "@/hooks/useFrmMapInfrastructure";
 import { useFrmMapMarkerFilters } from "@/hooks/useFrmMapMarkerFilters";
 import { useFrmRefetchMs } from "@/hooks/useFrmRefetchMs";
-import { ProductionBuildingModal } from "@/components/ProductionBuildingModal";
+import { useOpenBuildingDetail } from "@/contexts/BuildingDetailModalContext";
 import { defaultFrmMapLayerVisibility, type FrmMapLayerVisibility } from "@/lib/frmMapOverlays";
 import { mapInfraToggleCssRgba } from "@/lib/frmMapPalette";
 import { frmMarkerMapPosition } from "@/lib/frmMapWorld";
@@ -31,6 +31,7 @@ export function FrmWorldMapPage({
   isAdmin = false,
 }: FrmWorldMapPageProps) {
   const { t } = useTranslation();
+  const openBuildingDetail = useOpenBuildingDetail();
   const refetchMs = useFrmRefetchMs();
   const {
     search,
@@ -72,10 +73,20 @@ export function FrmWorldMapPage({
     if (row) setSelectedBuilding(null);
   }, []);
 
-  const onSelectBuilding = useCallback((row: Record<string, unknown> | null) => {
-    setSelectedBuilding(row);
-    if (row) setSelected(null);
-  }, []);
+  const onSelectBuilding = useCallback(
+    (row: Record<string, unknown> | null) => {
+      setSelectedBuilding(row);
+      if (row) {
+        setSelected(null);
+        openBuildingDetail(row, {
+          showMap: false,
+          showAdminControls: isAdmin,
+          onClosed: () => setSelectedBuilding(null),
+        });
+      }
+    },
+    [isAdmin, openBuildingDetail],
+  );
 
   const bumpProj = useCallback(() => {
     setProjTick((n) => n + 1);
@@ -258,14 +269,6 @@ export function FrmWorldMapPage({
           ) : null}
         </div>
       </div>
-      {selectedBuilding ?
-        <ProductionBuildingModal
-          row={selectedBuilding}
-          onClose={() => setSelectedBuilding(null)}
-          showMap={false}
-          showAdminControls={isAdmin}
-        />
-      : null}
     </div>
   );
 }

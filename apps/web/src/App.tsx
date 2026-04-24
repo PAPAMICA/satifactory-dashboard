@@ -17,6 +17,7 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { SetupPage } from "./pages/SetupPage";
 import { FicsitPageLoader } from "./components/FicsitPageLoader";
 import { RequireAdmin } from "./components/RequireAdmin";
+import { BuildingDetailModalProvider } from "./contexts/BuildingDetailModalContext";
 import { ShellLayout } from "./components/ShellLayout";
 import { apiFetch } from "./lib/api";
 import { clearAllAuth, isLoggedIn } from "./lib/auth";
@@ -94,7 +95,8 @@ export default function App() {
         window.location.href = "/login";
       }}
     >
-      <Routes>
+      <BuildingDetailModalProvider>
+        <Routes>
         <Route path="/" element={<DashboardPage />} />
         <Route path="/inventory" element={<InventoryPage />} />
         <Route path="/power" element={<PowerPage />} />
@@ -128,7 +130,8 @@ export default function App() {
           }
         />
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+        </Routes>
+      </BuildingDetailModalProvider>
     </ShellLayout>
   );
 }

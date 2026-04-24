@@ -1,10 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
+import { FrmIndustrialLever } from "@/components/FrmIndustrialLever";
 import { ItemThumb } from "@/components/ItemThumb";
+import { useOpenBuildingDetail } from "@/contexts/BuildingDetailModalContext";
 import { useFrmRefetchMs } from "@/hooks/useFrmRefetchMs";
 import { apiFetch } from "@/lib/api";
-import type { ControlPinMeta } from "@/lib/dashboardWidgetCatalog";
+import {
+  displayNameForBuilding,
+  displayNameForSwitch,
+  readEnergyControlPrefs,
+  subscribeEnergyPrefs,
+  toggleFavoriteBuilding,
+  toggleFavoriteSwitch,
+} from "@/lib/energyControlPrefs";
 import { asFrmRowArray } from "@/lib/frmRows";
 import { frmGetUrl } from "@/lib/frmApi";
 import {
@@ -21,71 +30,62 @@ import { factoryBuildingClassForThumb } from "@/lib/productionFrm";
 import { normalizeBuildClassName } from "@/lib/monitoringFrm";
 
 type Props = {
-  pins: ControlPinMeta[];
   editMode: boolean;
-  onAddPin: (pin: ControlPinMeta) => void;
-  onRemovePin: (id: string, kind: ControlPinMeta["kind"]) => void;
 };
 
-function resolvePinMeta(
-  pin: ControlPinMeta,
-  switches: Record<string, unknown>[],
-  factories: Record<string, unknown>[],
-  generators: Record<string, unknown>[],
-  lang: string,
-): { title: string; thumb: string } {
-  if (pin.label?.trim()) return { title: pin.label.trim(), thumb: "Build_PriorityPowerSwitch_C" };
-  if (pin.kind === "switch") {
-    const row = switches.find((s) => switchRowId(s) === pin.id);
-    if (row) {
-      const cls = String(row.ClassName ?? row.className ?? "Build_PowerSwitch_C").trim();
-      const nm = String(row.Name ?? row.name ?? "").trim();
-      return { title: nm || pin.id, thumb: cls };
-    }
-    return { title: pin.id, thumb: "Build_PriorityPowerSwitch_C" };
-  }
-  const fac = factories.find((r) => String(r.ID ?? r.Id ?? "") === pin.id);
-  if (fac) {
-    const thumb = factoryBuildingClassForThumb(fac);
-    const nm = String(fac.Name ?? fac.name ?? "").trim();
-    return { title: nm || pin.id, thumb };
-  }
-  const gen = generators.find((r) => String(r.ID ?? r.Id ?? r.id ?? "") === pin.id);
-  if (gen) {
-    const raw = String(gen.ClassName ?? gen.className ?? "").trim();
-    const thumb = raw ? normalizeBuildClassName(raw) : "Build_GeneratorCoal_C";
-    const img = thumb !== "—" ? thumb : "Build_GeneratorCoal_C";
-    const nm = String(gen.Name ?? gen.name ?? "").trim();
-    return { title: nm || pin.id, thumb: img };
-  }
-  return { title: pin.id, thumb: "Build_WorkBench_C" };
-}
+type Card =
+  | { kind: "switch"; id: string; row: Record<string, unknown> }
+  | { kind: "building"; id: string; row: Record<string, unknown> };
 
-export function FrmDashboardControlWidget({ pins, editMode, onAddPin, onRemovePin }: Props) {
+export function FrmDashboardControlWidget({ editMode }: Props) {
   const { t, i18n } = useTranslation();
   const qc = useQueryClient();
+  const openBuildingDetail = useOpenBuildingDetail();
+  const prefs = useSyncExternalStore(subscribeEnergyPrefs, readEnergyControlPrefs, readEnergyControlPrefs);
   const refetchMs = useFrmRefetchMs();
+
+  const { data: me } = useQuery({
+    queryKey: ["me"],
+    queryFn: () => apiFetch<{ isAdmin?: boolean }>("/api/me"),
+    staleTime: 60_000,
+  });
+
   const swQ = useQuery({
     queryKey: ["frm", "getSwitches"],
     queryFn: () => apiFetch<unknown>(frmGetUrl("getSwitches")),
     refetchInterval: refetchMs,
-    enabled: editMode || pins.some((p) => p.kind === "switch"),
   });
   const facQ = useQuery({
     queryKey: ["frm", "getFactory"],
     queryFn: () => apiFetch<unknown>(frmGetUrl("getFactory")),
     refetchInterval: refetchMs,
-    enabled: editMode || pins.some((p) => p.kind === "building"),
   });
   const genQ = useQuery({
     queryKey: ["frm", "getGenerators"],
     queryFn: () => apiFetch<unknown>(frmGetUrl("getGenerators")),
     refetchInterval: refetchMs,
-    enabled: editMode,
   });
   const switches = asFrmRowArray(swQ.data);
   const factories = asFrmRowArray(facQ.data);
   const generators = asFrmRowArray(genQ.data);
+
+  const cards: Card[] = useMemo(() => {
+    const out: Card[] = [];
+    for (const id of prefs.favoriteSwitchIds) {
+      const row = switches.find((s) => switchRowId(s) === id);
+      if (row) out.push({ kind: "switch", id, row });
+    }
+    for (const id of prefs.favoriteBuildingIds) {
+      const fac = factories.find((r) => String(r.ID ?? r.Id ?? "") === id);
+      if (fac) {
+        out.push({ kind: "building", id, row: fac });
+        continue;
+      }
+      const gen = generators.find((r) => String(r.ID ?? r.Id ?? r.id ?? "") === id);
+      if (gen) out.push({ kind: "building", id, row: gen });
+    }
+    return out;
+  }, [prefs.favoriteSwitchIds, prefs.favoriteBuildingIds, switches, factories, generators]);
 
   const swMut = useMutation({
     mutationFn: (p: { id: string; status: boolean }) => postSetSwitches({ ID: p.id, status: p.status }),
@@ -104,115 +104,98 @@ export function FrmDashboardControlWidget({ pins, editMode, onAddPin, onRemovePi
     },
   });
 
-  const pickerRows = useMemo(() => {
-    if (!editMode) return [] as { kind: ControlPinMeta["kind"]; id: string; title: string; thumb: string }[];
-    const out: { kind: ControlPinMeta["kind"]; id: string; title: string; thumb: string }[] = [];
-    for (const s of switches) {
-      const id = switchRowId(s);
-      if (!id || pins.some((p) => p.kind === "switch" && p.id === id)) continue;
-      const cls = String(s.ClassName ?? s.className ?? "Build_PowerSwitch_C").trim();
-      const nm = String(s.Name ?? s.name ?? "").trim() || id;
-      out.push({ kind: "switch", id, title: nm, thumb: cls });
-    }
-    for (const r of factories.slice(0, 80)) {
-      const id = String(r.ID ?? r.Id ?? "").trim();
-      if (!id || pins.some((p) => p.kind === "building" && p.id === id)) continue;
-      out.push({
-        kind: "building",
-        id,
-        title: String(r.Name ?? r.name ?? id).trim(),
-        thumb: factoryBuildingClassForThumb(r),
-      });
-    }
-    for (const r of generators.slice(0, 40)) {
-      const id = String(r.ID ?? r.Id ?? r.id ?? "").trim();
-      if (!id || pins.some((p) => p.kind === "building" && p.id === id)) continue;
-      const raw = String(r.ClassName ?? r.className ?? "").trim();
-      const thumb = raw ? normalizeBuildClassName(raw) : "Build_GeneratorCoal_C";
-      const img = thumb !== "—" ? thumb : "Build_GeneratorCoal_C";
-      out.push({ kind: "building", id, title: String(r.Name ?? r.name ?? id).trim(), thumb: img });
-    }
-    return out.slice(0, 24);
-  }, [editMode, switches, factories, generators, pins]);
-
-  if (!pins.length && !editMode) {
+  if (!cards.length) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-2 p-4 text-center">
-        <p className="text-xs text-sf-muted">{t("dashboard.widgets.controlEmpty")}</p>
-        <p className="text-[0.65rem] text-sf-muted/80">{t("dashboard.widgets.controlEmptyHint")}</p>
+        <p className="text-xs text-sf-muted">{t("dashboard.widgets.controlEmptyFavorites")}</p>
+        <p className="text-[0.65rem] text-sf-muted/80">{t("dashboard.widgets.controlEmptyFavoritesHint")}</p>
       </div>
     );
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-2 overflow-hidden p-2 sm:p-3">
-      {editMode && pickerRows.length ?
-        <div className="shrink-0 rounded-lg border border-sf-cyan/25 bg-sf-cyan/5 p-2">
-          <p className="mb-1.5 text-[0.6rem] font-medium uppercase tracking-wider text-sf-cyan">
-            {t("dashboard.widgets.controlAddQuick")}
-          </p>
-          <ul className="max-h-28 space-y-1 overflow-y-auto">
-            {pickerRows.map((r) => (
-              <li key={`${r.kind}-${r.id}`}>
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 rounded border border-sf-border/40 bg-black/20 px-2 py-1 text-left text-[0.65rem] text-sf-cream hover:border-sf-cyan/40"
-                  onClick={() => onAddPin({ kind: r.kind, id: r.id, label: r.title })}
-                >
-                  <ItemThumb className={r.thumb} label="" size={22} />
-                  <span className="min-w-0 flex-1 truncate">{r.title}</span>
-                  <span className="shrink-0 text-[0.55rem] text-sf-muted">{r.kind === "switch" ? "SW" : "Δ"}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      : null}
-
-      <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-0.5">
-        {pins.map((pin) => {
-          const meta = resolvePinMeta(pin, switches, factories, generators, i18n.language);
-          const typeLbl = frmgClassLabel(meta.thumb, i18n.language);
-          const swRow = pin.kind === "switch" ? switches.find((s) => switchRowId(s) === pin.id) : null;
-          const on = pin.kind === "switch" && swRow ? switchRowIsOn(swRow) : readCachedBuildingEnabled(pin.id) ?? true;
-          const busy =
-            pin.kind === "switch" ? swMut.isPending && swMut.variables?.id === pin.id
-            : enMut.isPending && enMut.variables?.id === pin.id;
-
+    <ul className="flex h-full min-h-0 flex-col gap-2.5 overflow-y-auto p-2 sm:gap-3 sm:p-3">
+      {cards.map((c) => {
+        const id = c.id;
+        if (c.kind === "switch") {
+          const r = c.row;
+          const cls = String(r.ClassName ?? r.className ?? "Build_PowerSwitch_C").trim();
+          const frmName = String(r.Name ?? r.name ?? "").trim() || id;
+          const title = displayNameForSwitch(id, frmName);
+          const on = switchRowIsOn(r);
+          const busy = swMut.isPending && swMut.variables?.id === id;
+          const typeLbl = frmgClassLabel(cls, i18n.language);
           return (
             <li
-              key={`${pin.kind}-${pin.id}`}
-              className="flex items-center gap-2 rounded-lg border border-sf-border/60 bg-black/25 px-2 py-2 ring-1 ring-white/[0.03]"
+              key={`sw-${id}`}
+              className="flex flex-col gap-2 rounded-xl border border-sf-border/70 bg-gradient-to-b from-black/35 to-[#0f0e0c] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ring-1 ring-black/30 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:p-3"
             >
-              <ItemThumb className={meta.thumb} label="" size={32} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-medium text-sf-cream">{meta.title}</p>
-                <p className="truncate font-mono text-[0.55rem] text-sf-muted">{typeLbl}</p>
-              </div>
               <button
                 type="button"
-                disabled={busy}
-                className="sf-btn shrink-0 px-2 py-1 text-[0.65rem]"
-                onClick={() =>
-                  pin.kind === "switch" ? swMut.mutate({ id: pin.id, status: !on }) : enMut.mutate({ id: pin.id, status: !on })
-                }
+                className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg border border-transparent text-left transition-colors hover:border-sf-orange/25 hover:bg-white/[0.03]"
+                onClick={() => openBuildingDetail(r, { showMap: false, showAdminControls: Boolean(me?.isAdmin) })}
               >
-                {busy ? "…" : on ? t("control.cutShort") : t("control.onShort")}
+                <ItemThumb className={cls} label="" size={40} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-sf-cream">{title}</p>
+                  <p className="truncate font-mono text-[0.55rem] text-sf-muted">{typeLbl}</p>
+                </div>
               </button>
+              <div className="flex shrink-0 items-center justify-between gap-2 sm:flex-col sm:items-end">
+                <FrmIndustrialLever compact on={on} busy={busy} onToggle={() => swMut.mutate({ id, status: !on })} />
+                {editMode ?
+                  <button
+                    type="button"
+                    className="text-[0.6rem] uppercase tracking-wider text-sf-danger hover:underline"
+                    onClick={() => toggleFavoriteSwitch(id)}
+                  >
+                    {t("dashboard.widgets.controlUnfavorite")}
+                  </button>
+                : null}
+              </div>
+            </li>
+          );
+        }
+        const r = c.row;
+        const raw = String(r.ClassName ?? r.className ?? "").trim();
+        const norm = raw ? normalizeBuildClassName(raw) : "—";
+        const img = norm !== "—" ? norm : factoryBuildingClassForThumb(r);
+        const frmName = String(r.Name ?? r.name ?? "").trim() || id;
+        const title = displayNameForBuilding(id, frmName);
+        const on = readCachedBuildingEnabled(id) ?? true;
+        const busy = enMut.isPending && enMut.variables?.id === id;
+        const typeLbl = frmgClassLabel(img, i18n.language);
+        return (
+          <li
+            key={`b-${id}`}
+            className="flex flex-col gap-2 rounded-xl border border-sf-border/70 bg-gradient-to-b from-black/35 to-[#0f0e0c] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ring-1 ring-black/30 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:p-3"
+          >
+            <button
+              type="button"
+              className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg border border-transparent text-left transition-colors hover:border-sf-orange/25 hover:bg-white/[0.03]"
+              onClick={() => openBuildingDetail(r, { showMap: true, showAdminControls: Boolean(me?.isAdmin) })}
+            >
+              <ItemThumb className={img} label="" size={40} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-sf-cream">{title}</p>
+                <p className="truncate font-mono text-[0.55rem] text-sf-muted">{typeLbl}</p>
+              </div>
+            </button>
+            <div className="flex shrink-0 items-center justify-between gap-2 sm:flex-col sm:items-end">
+              <FrmIndustrialLever compact on={on} busy={busy} onToggle={() => enMut.mutate({ id, status: !on })} />
               {editMode ?
                 <button
                   type="button"
-                  className="shrink-0 rounded px-1.5 text-[0.65rem] text-sf-danger hover:bg-white/10"
-                  onClick={() => onRemovePin(pin.id, pin.kind)}
-                  aria-label={t("dashboard.widgets.controlRemovePin")}
+                  className="text-[0.6rem] uppercase tracking-wider text-sf-danger hover:underline"
+                  onClick={() => toggleFavoriteBuilding(id)}
                 >
-                  ×
+                  {t("dashboard.widgets.controlUnfavorite")}
                 </button>
               : null}
-            </li>
-          );
-        })}
-      </ul>
-    </div>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

@@ -8,6 +8,7 @@ import { FrmPowerByBuildingType, totalGeneratorMw } from "@/components/FrmPowerB
 import { FrmPowerSummaryGrid } from "@/components/FrmPowerSummaryGrid";
 import { FrmPowerTrendPanel } from "@/components/FrmPowerTrendPanel";
 import { FrmDashboardControlWidget } from "@/components/FrmDashboardControlWidget";
+import { useOpenBuildingDetail } from "@/contexts/BuildingDetailModalContext";
 import { FicsitPageLoader } from "@/components/FicsitPageLoader";
 import { ItemThumb } from "@/components/ItemThumb";
 import { useMergedInventoryItems } from "@/hooks/useMergedInventoryItems";
@@ -19,7 +20,6 @@ import {
   dashboardWidgetById,
   ensureWidgetMeta,
   newLayoutItemForWidget,
-  type ControlPinMeta,
   type WidgetMetaEntry,
   type WidgetVariant,
 } from "@/lib/dashboardWidgetCatalog";
@@ -318,6 +318,7 @@ export function DashboardPage() {
   const { t, i18n } = useTranslation();
   const isDesktop = useMediaQuery(mdUp);
   const qc = useQueryClient();
+  const openBuildingDetail = useOpenBuildingDetail();
   const [layout, setLayout] = useState<Layout[] | null>(null);
   const metaRef = useRef<Record<string, WidgetMetaEntry>>({});
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -604,39 +605,6 @@ export function DashboardPage() {
     scheduleSave(layout);
   }, [layout, scheduleSave, readOnlyDashboard]);
 
-  const addControlPin = useCallback(
-    (pin: ControlPinMeta) => {
-      if (readOnlyDashboard || !layout?.some((l) => l.i === "ctrl")) return;
-      const cur = metaRef.current.ctrl?.controlPins ?? [];
-      if (cur.some((p) => p.id === pin.id && p.kind === pin.kind)) return;
-      const prev = metaRef.current.ctrl ?? {};
-      metaRef.current.ctrl = {
-        ...prev,
-        type: "control_pins",
-        controlPins: [...cur, pin],
-      };
-      setMetaGen((g) => g + 1);
-      scheduleSave(layout);
-    },
-    [layout, scheduleSave, readOnlyDashboard],
-  );
-
-  const removeControlPin = useCallback(
-    (id: string, kind: ControlPinMeta["kind"]) => {
-      if (readOnlyDashboard || !layout?.some((l) => l.i === "ctrl")) return;
-      const cur = metaRef.current.ctrl?.controlPins ?? [];
-      const prev = metaRef.current.ctrl ?? {};
-      metaRef.current.ctrl = {
-        ...prev,
-        type: "control_pins",
-        controlPins: cur.filter((p) => !(p.id === id && p.kind === kind)),
-      };
-      setMetaGen((g) => g + 1);
-      scheduleSave(layout);
-    },
-    [layout, scheduleSave, readOnlyDashboard],
-  );
-
   const widgetVariants = useMemo(() => {
     if (!layout) return {} as Record<string, WidgetVariant>;
     const m: Record<string, WidgetVariant> = {};
@@ -674,8 +642,6 @@ export function DashboardPage() {
       return true;
     });
   }, [layout, me?.isAdmin]);
-
-  const controlPins = useMemo(() => metaRef.current.ctrl?.controlPins ?? [], [layout, metaGen]);
 
   const renderFavorites = (variant: WidgetVariant, narrow: boolean) => {
     const thumb = variant === "visual" ? (narrow ? 48 : 56) : narrow ? 22 : 24;
@@ -1242,9 +1208,13 @@ export function DashboardPage() {
             const fc = rowClassForThumb(r, "Build_ManufacturerMk1_C");
             const typeLbl = frmgClassLabel(fc, i18n.language);
             return (
-              <div
+              <button
                 key={String(r.ID ?? r.id ?? i)}
-                className="flex flex-col gap-2 rounded-lg border border-sf-border/80 bg-black/25 p-2 shadow-sm ring-1 ring-white/[0.04] sm:flex-row sm:items-start"
+                type="button"
+                onClick={() =>
+                  openBuildingDetail(r, { showMap: true, showAdminControls: Boolean(me?.isAdmin) })
+                }
+                className="flex w-full flex-col gap-2 rounded-lg border border-sf-border/80 bg-black/25 p-2 text-left shadow-sm ring-1 ring-white/[0.04] transition-colors hover:border-sf-orange/45 hover:bg-black/35 sm:flex-row sm:items-start"
               >
                 <ItemThumb className={fc} label="" size={52} />
                 <div className="min-w-0 flex-1 text-center sm:text-left">
@@ -1254,7 +1224,7 @@ export function DashboardPage() {
                   </p>
                   <p className="truncate text-xs text-sf-muted">{typeLbl}</p>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -1273,15 +1243,20 @@ export function DashboardPage() {
             const fc = rowClassForThumb(r, "Build_ManufacturerMk1_C");
             const typeLbl = frmgClassLabel(fc, i18n.language);
             return (
-              <li
-                key={String(r.ID ?? r.id ?? i)}
-                className="flex min-h-0 items-center gap-1.5 rounded-lg border border-sf-border/50 bg-black/15 px-1.5 py-1.5 sm:gap-2 sm:px-2 sm:py-2"
-              >
-                <ItemThumb className={fc} label="" size={22} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-medium text-sf-cream">{String(r.Name ?? r.name ?? "—")}</p>
-                  <p className="truncate text-[0.6rem] text-sf-muted">{typeLbl}</p>
-                </div>
+              <li key={String(r.ID ?? r.id ?? i)} className="list-none">
+                <button
+                  type="button"
+                  onClick={() =>
+                    openBuildingDetail(r, { showMap: true, showAdminControls: Boolean(me?.isAdmin) })
+                  }
+                  className="flex min-h-0 w-full items-center gap-1.5 rounded-lg border border-sf-border/50 bg-black/15 px-1.5 py-1.5 text-left transition-colors hover:border-sf-orange/40 hover:bg-black/25 sm:gap-2 sm:px-2 sm:py-2"
+                >
+                  <ItemThumb className={fc} label="" size={22} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-medium text-sf-cream">{String(r.Name ?? r.name ?? "—")}</p>
+                    <p className="truncate text-[0.6rem] text-sf-muted">{typeLbl}</p>
+                  </div>
+                </button>
               </li>
             );
           })}
@@ -1441,14 +1416,7 @@ export function DashboardPage() {
         if (!me?.isAdmin) {
           return <p className="p-3 text-xs text-sf-muted">{t("dashboard.widgets.controlAdminOnly")}</p>;
         }
-        return (
-          <FrmDashboardControlWidget
-            pins={controlPins}
-            editMode={editMode}
-            onAddPin={addControlPin}
-            onRemovePin={removeControlPin}
-          />
-        );
+        return <FrmDashboardControlWidget editMode={editMode} />;
       default:
         return <p className="p-3 text-sm text-sf-muted">{t("dashboard.widgets.unknown")}</p>;
     }

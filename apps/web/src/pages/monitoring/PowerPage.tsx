@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { PowerEnergyFavoritesPanel } from "@/components/PowerEnergyFavoritesPanel";
 import { FrmSwitchesPanel } from "@/components/FrmSwitchesPanel";
 import { useTranslation } from "react-i18next";
 import { FicsitPageLoader } from "@/components/FicsitPageLoader";
@@ -9,6 +10,7 @@ import { FrmPowerTrendPanel } from "@/components/FrmPowerTrendPanel";
 import { ItemThumb } from "@/components/ItemThumb";
 import { LinearFractionBar } from "@/components/LinearFractionBar";
 import { MonitoringGate } from "@/components/MonitoringGate";
+import { useOpenBuildingDetail } from "@/contexts/BuildingDetailModalContext";
 import { useFrmRefetchMs } from "@/hooks/useFrmRefetchMs";
 import { apiFetch } from "@/lib/api";
 import { asFrmRowArray } from "@/lib/frmRows";
@@ -42,9 +44,10 @@ function PowerPageBody() {
   const { t, i18n } = useTranslation();
   const refetchMs = useFrmRefetchMs();
   const [chartWindow, setChartWindow] = useState<ChartTimeWindow>("30m");
+  const openBuildingDetail = useOpenBuildingDetail();
   const { data: me } = useQuery({
     queryKey: ["me"],
-    queryFn: () => apiFetch<{ isAdmin?: boolean }>("/api/me"),
+    queryFn: () => apiFetch<{ isAdmin?: boolean; isPublicViewer?: boolean }>("/api/me"),
     staleTime: 60_000,
   });
 
@@ -118,6 +121,8 @@ function PowerPageBody() {
               </div>
             </section>
           )}
+
+          {!me?.isPublicViewer ? <PowerEnergyFavoritesPanel /> : null}
 
           {me?.isAdmin ?
             <section className="sf-panel min-w-0 overflow-hidden">
@@ -283,7 +288,19 @@ function PowerPageBody() {
                   const share =
                     totals.cons > 0 && mwN > 0 ? Math.min(1, mwN / totals.cons) : 0;
                   return (
-                    <tr key={String(r.ID ?? r.id ?? i)} className="border-b border-sf-border/40">
+                    <tr
+                      key={String(r.ID ?? r.id ?? i)}
+                      className="cursor-pointer border-b border-sf-border/40 transition-colors hover:bg-white/[0.04]"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          openBuildingDetail(r, { showMap: true, showAdminControls: Boolean(me?.isAdmin) });
+                        }
+                      }}
+                      onClick={() => openBuildingDetail(r, { showMap: true, showAdminControls: Boolean(me?.isAdmin) })}
+                    >
                       <td className="p-2 align-middle">
                         <ItemThumb className={imgClass} label={typeLabel} size={28} />
                       </td>

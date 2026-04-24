@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { FrmIndustrialLever } from "@/components/FrmIndustrialLever";
 import { ItemThumb } from "@/components/ItemThumb";
+import { useOpenBuildingDetail } from "@/contexts/BuildingDetailModalContext";
 import { useFrmRefetchMs } from "@/hooks/useFrmRefetchMs";
 import { apiFetch } from "@/lib/api";
 import { asFrmRowArray } from "@/lib/frmRows";
@@ -18,6 +20,12 @@ export function FrmSwitchesPanel({ className = "", compact }: Props) {
   const { t, i18n } = useTranslation();
   const qc = useQueryClient();
   const refetchMs = useFrmRefetchMs();
+  const openBuildingDetail = useOpenBuildingDetail();
+  const { data: me } = useQuery({
+    queryKey: ["me"],
+    queryFn: () => apiFetch<{ isAdmin?: boolean }>("/api/me"),
+    staleTime: 60_000,
+  });
   const q = useQuery({
     queryKey: ["frm", "getSwitches"],
     queryFn: () => apiFetch<unknown>(frmGetUrl("getSwitches")),
@@ -66,7 +74,11 @@ export function FrmSwitchesPanel({ className = "", compact }: Props) {
               : "flex flex-col gap-2 rounded-xl border border-sf-border/70 bg-gradient-to-br from-black/35 to-black/20 p-3 shadow-sm ring-1 ring-white/[0.04] sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:p-3.5"
             }
           >
-            <div className="flex min-w-0 flex-1 items-center gap-2.5">
+            <button
+              type="button"
+              className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg border border-transparent text-left transition-colors hover:border-sf-orange/30 hover:bg-white/[0.04]"
+              onClick={() => openBuildingDetail(r, { showMap: false, showAdminControls: Boolean(me?.isAdmin) })}
+            >
               <ItemThumb className={cls} label="" size={compact ? 32 : 40} />
               <div className="min-w-0 flex-1">
                 <p className={`truncate font-medium text-sf-cream ${compact ? "text-xs" : "text-sm"}`}>{nm}</p>
@@ -77,27 +89,9 @@ export function FrmSwitchesPanel({ className = "", compact }: Props) {
                   </p>
                 : null}
               </div>
-            </div>
+            </button>
             <div className="flex shrink-0 items-center gap-2 sm:pl-2">
-              <span
-                className={`rounded px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-wider ${
-                  on ? "bg-sf-ok/15 text-sf-ok" : "bg-sf-orange/15 text-sf-orange"
-                }`}
-              >
-                {on ? t("control.stateOn") : t("control.stateOff")}
-              </span>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => mut.mutate({ id, status: !on })}
-                className={
-                  compact ?
-                    "sf-btn min-h-8 px-2.5 py-1 text-[0.65rem]"
-                  : "sf-btn min-h-9 px-3 py-1.5 text-xs"
-                }
-              >
-                {busy ? t("common.loading") : on ? t("control.turnOff") : t("control.turnOn")}
-              </button>
+              <FrmIndustrialLever compact={compact} on={on} busy={busy} onToggle={() => mut.mutate({ id, status: !on })} />
             </div>
           </li>
         );

@@ -129,17 +129,41 @@ function readBoundingBox2d(row: Record<string, unknown>): { minX: number; minY: 
   return { minX, minY, maxX, maxY };
 }
 
+function readLocationRotationDeg(row: Record<string, unknown>): number {
+  const loc = (row.location ?? row.Location) as Record<string, unknown> | undefined;
+  if (!loc) return 0;
+  const r = loc.rotation ?? loc.Rotation;
+  const n = Number(r);
+  return Number.isFinite(n) ? n : 0;
+}
+
 /**
- * Bbox monde FRM (axes monde) → rectangle sur la carte `[x, −y]` (sans rotation locale).
- * Aligné sur la grille Satisfactory / minimap ; évite les dérives d’orientation du pivot + yaw.
+ * Rectangle dans le plan monde XY (taille = bbox FRM), centré sur la bbox, puis rotation horaire (°) autour du centre.
+ * Carte affichée en `[x, −y]` comme les repères FRM.
  */
-function footprintPolygonWorldAabbToMap(bbox2: { minX: number; minY: number; maxX: number; maxY: number }): [number, number][] {
-  return [
-    [bbox2.minX, -bbox2.minY],
-    [bbox2.maxX, -bbox2.minY],
-    [bbox2.maxX, -bbox2.maxY],
-    [bbox2.minX, -bbox2.maxY],
+function footprintOrientedPolygonWorldToMap(row: Record<string, unknown>): [number, number][] | null {
+  const bbox2 = readBoundingBox2d(row);
+  if (!bbox2) return null;
+  const rotDeg = readLocationRotationDeg(row);
+  const rot = (-rotDeg * Math.PI) / 180;
+  const cx = (bbox2.minX + bbox2.maxX) / 2;
+  const cy = (bbox2.minY + bbox2.maxY) / 2;
+  const hw = (bbox2.maxX - bbox2.minX) / 2;
+  const hd = (bbox2.maxY - bbox2.minY) / 2;
+  if (!(hw > 0 && hd > 0)) return null;
+  const cos = Math.cos(rot);
+  const sin = Math.sin(rot);
+  const corners: [number, number][] = [
+    [-hw, -hd],
+    [hw, -hd],
+    [hw, hd],
+    [-hw, hd],
   ];
+  return corners.map(([lx, ly]) => {
+    const wx = cx + lx * cos - ly * sin;
+    const wy = cy + lx * sin + ly * cos;
+    return [wx, -wy] as [number, number];
+  });
 }
 
 function endpointsToPath(
@@ -176,9 +200,8 @@ function addBuildingFootprintOrPoint(
   const displayId = idRaw || `b-${category}-${seq}`;
   const fill = rgbaForFactoryMapCategory(category);
   const line: [number, number, number, number] = [18, 16, 14, 255];
-  const bbox2 = readBoundingBox2d(row);
-  if (bbox2) {
-    const poly = footprintPolygonWorldAabbToMap(bbox2);
+  const poly = footprintOrientedPolygonWorldToMap(row);
+  if (poly) {
     factoryFootprints.push({ id: displayId, polygon: poly, fill, line, row, category });
   } else {
     factoryPoints.push({ id: displayId, position: pos, color: fill, row, category });
