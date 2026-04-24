@@ -107,6 +107,17 @@ function IconAdmin({ className }: { className?: string }) {
   );
 }
 
+function IconControl({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+      <rect x="3" y="5" width="18" height="5" rx="1.5" />
+      <rect x="3" y="14" width="18" height="5" rx="1.5" />
+      <circle cx="8" cy="7.5" r="1.75" fill="currentColor" stroke="none" />
+      <circle cx="16" cy="16.5" r="1.75" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 function IconLogout({ className }: { className?: string }) {
   return (
     <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
@@ -458,14 +469,24 @@ export function ShellLayout({
           onNavigate={closeMobile}
         />
         {me?.isAdmin ? (
-          <SidebarNavLink
-            to="/admin"
-            icon={<IconAdmin className="shrink-0" />}
-            label={t("nav.admin")}
-            collapsed={navCollapsed}
-            tone="admin"
-            onNavigate={closeMobile}
-          />
+          <>
+            <SidebarNavLink
+              to="/control"
+              icon={<IconControl className="shrink-0" />}
+              label={t("nav.control")}
+              collapsed={navCollapsed}
+              tone="admin"
+              onNavigate={closeMobile}
+            />
+            <SidebarNavLink
+              to="/admin"
+              icon={<IconAdmin className="shrink-0" />}
+              label={t("nav.admin")}
+              collapsed={navCollapsed}
+              tone="admin"
+              onNavigate={closeMobile}
+            />
+          </>
         ) : null}
       </nav>
 

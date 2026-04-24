@@ -7,6 +7,7 @@ import { IconLayers, IconTrendUp } from "@/components/InventoryIcons";
 import { FrmPowerByBuildingType, totalGeneratorMw } from "@/components/FrmPowerByBuildingType";
 import { FrmPowerSummaryGrid } from "@/components/FrmPowerSummaryGrid";
 import { FrmPowerTrendPanel } from "@/components/FrmPowerTrendPanel";
+import { FrmDashboardControlWidget } from "@/components/FrmDashboardControlWidget";
 import { FicsitPageLoader } from "@/components/FicsitPageLoader";
 import { ItemThumb } from "@/components/ItemThumb";
 import { useMergedInventoryItems } from "@/hooks/useMergedInventoryItems";
@@ -18,6 +19,7 @@ import {
   dashboardWidgetById,
   ensureWidgetMeta,
   newLayoutItemForWidget,
+  type ControlPinMeta,
   type WidgetMetaEntry,
   type WidgetVariant,
 } from "@/lib/dashboardWidgetCatalog";
@@ -327,7 +329,7 @@ export function DashboardPage() {
 
   const { data: me } = useQuery({
     queryKey: ["me"],
-    queryFn: () => apiFetch<{ isPublicViewer?: boolean }>("/api/me"),
+    queryFn: () => apiFetch<{ isPublicViewer?: boolean; isAdmin?: boolean }>("/api/me"),
     staleTime: 60_000,
   });
   const readOnlyDashboard = Boolean(me?.isPublicViewer);
@@ -602,6 +604,39 @@ export function DashboardPage() {
     scheduleSave(layout);
   }, [layout, scheduleSave, readOnlyDashboard]);
 
+  const addControlPin = useCallback(
+    (pin: ControlPinMeta) => {
+      if (readOnlyDashboard || !layout?.some((l) => l.i === "ctrl")) return;
+      const cur = metaRef.current.ctrl?.controlPins ?? [];
+      if (cur.some((p) => p.id === pin.id && p.kind === pin.kind)) return;
+      const prev = metaRef.current.ctrl ?? {};
+      metaRef.current.ctrl = {
+        ...prev,
+        type: "control_pins",
+        controlPins: [...cur, pin],
+      };
+      setMetaGen((g) => g + 1);
+      scheduleSave(layout);
+    },
+    [layout, scheduleSave, readOnlyDashboard],
+  );
+
+  const removeControlPin = useCallback(
+    (id: string, kind: ControlPinMeta["kind"]) => {
+      if (readOnlyDashboard || !layout?.some((l) => l.i === "ctrl")) return;
+      const cur = metaRef.current.ctrl?.controlPins ?? [];
+      const prev = metaRef.current.ctrl ?? {};
+      metaRef.current.ctrl = {
+        ...prev,
+        type: "control_pins",
+        controlPins: cur.filter((p) => !(p.id === id && p.kind === kind)),
+      };
+      setMetaGen((g) => g + 1);
+      scheduleSave(layout);
+    },
+    [layout, scheduleSave, readOnlyDashboard],
+  );
+
   const widgetVariants = useMemo(() => {
     if (!layout) return {} as Record<string, WidgetVariant>;
     const m: Record<string, WidgetVariant> = {};
@@ -633,8 +668,14 @@ export function DashboardPage() {
   const addableWidgets = useMemo(() => {
     if (!layout) return [];
     const ids = new Set(layout.map((l) => l.i));
-    return catalogWidgets().filter((w) => !ids.has(w.id));
-  }, [layout]);
+    return catalogWidgets().filter((w) => {
+      if (ids.has(w.id)) return false;
+      if (w.id === "ctrl" && !me?.isAdmin) return false;
+      return true;
+    });
+  }, [layout, me?.isAdmin]);
+
+  const controlPins = useMemo(() => metaRef.current.ctrl?.controlPins ?? [], [layout, metaGen]);
 
   const renderFavorites = (variant: WidgetVariant, narrow: boolean) => {
     const thumb = variant === "visual" ? (narrow ? 48 : 56) : narrow ? 22 : 24;
@@ -1396,6 +1437,18 @@ export function DashboardPage() {
         return renderGenerators(v);
       case "fabric":
         return renderFactoryList(v);
+      case "ctrl":
+        if (!me?.isAdmin) {
+          return <p className="p-3 text-xs text-sf-muted">{t("dashboard.widgets.controlAdminOnly")}</p>;
+        }
+        return (
+          <FrmDashboardControlWidget
+            pins={controlPins}
+            editMode={editMode}
+            onAddPin={addControlPin}
+            onRemovePin={removeControlPin}
+          />
+        );
       default:
         return <p className="p-3 text-sm text-sf-muted">{t("dashboard.widgets.unknown")}</p>;
     }
@@ -1415,6 +1468,7 @@ export function DashboardPage() {
     "pwruse",
     "gen",
     "fabric",
+    "ctrl",
   ]);
 
   const renderPanel = (id: string, { drag }: { drag: boolean }) => (

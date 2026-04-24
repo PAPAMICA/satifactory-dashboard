@@ -17,6 +17,7 @@
     "monSink": "Sinks",
     "monSession": "Session",
     "monFactory": "Factory",
+    "control": "Control",
     "sidebarCollapse": "Collapse sidebar",
     "sidebarExpand": "Expand sidebar",
     "publicViewerBanner": "Public access: view-only (no settings or server-side actions).",
@@ -157,8 +158,33 @@
       "factoryHint": "{{shown}} row(s) shown of {{total}}.",
       "elevatorName": "Installation",
       "factoryBuildingType": "Building type",
-      "sinkPhaseProgress": "Progress toward next coupon"
+      "sinkPhaseProgress": "Progress toward next coupon",
+      "controlCatalog": "FRM control",
+      "controlEmpty": "No shortcuts configured.",
+      "controlEmptyHint": "Turn on dashboard edit mode to add switches and buildings.",
+      "controlAddQuick": "Add from current game",
+      "controlRemovePin": "Remove this shortcut",
+      "controlAdminOnly": "This widget is for administrators only."
     }
+  },
+  "control": {
+    "pageTitle": "Factory control",
+    "pageHint": "Switches, production buildings, and generators (FRM setSwitches / setEnabled). Administrator access only.",
+    "sectionSwitches": "Power switches",
+    "sectionFactory": "Production buildings",
+    "sectionGenerators": "Generators",
+    "factorySearch": "Filter by name or ID…",
+    "stateOn": "On",
+    "stateOff": "Off",
+    "turnOn": "Turn on",
+    "turnOff": "Turn off",
+    "cutPower": "Cut power",
+    "restorePower": "Restore power",
+    "cutShort": "Off",
+    "onShort": "On",
+    "buildingPower": "Power",
+    "buildingPowerHint": "The displayed state updates after your actions; FRM read APIs do not always expose the current ON/OFF state.",
+    "switchPriority": "Priority group: {{n}}"
   },
   "inventory": {
     "title": "Global inventory",
@@ -337,6 +363,18 @@
     "productionSortDirection": "Direction",
     "productionSortDirAsc": "Ascending",
     "productionSortDirDesc": "Descending",
-    "productionCount": "{{n}} row(s) matching filter out of {{total}} buildings."
+    "productionCount": "{{n}} row(s) matching filter out of {{total}} buildings.",
+    "buildingModalCeilingShort": "cap",
+    "buildingModalTrendNeedSamples": "Not enough samples to plot the trend yet (wait for a few refreshes).",
+    "buildingModalLegendProdMw": "Grid production",
+    "buildingModalLegendConsMw": "Grid consumption",
+    "buildingModalGridPowerTitle": "Grid — production vs consumption (MW)",
+    "buildingModalClassMwTitle": "MW draw for this building type (aggregated)",
+    "generatorDetailTitle": "Generator — snapshot",
+    "generatorMwLive": "Power output",
+    "generatorFuel": "Fuel (amount)",
+    "generatorSupplement": "Supplement (e.g. water, steam)",
+    "generatorSupplementCurve": "Supplement (consumption)",
+    "generatorCurvesTitle": "Trend — MW output and supplement"
   }
 }

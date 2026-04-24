@@ -2,11 +2,20 @@ import type { Layout } from "react-grid-layout";
 
 export type WidgetVariant = "standard" | "visual";
 
+/** Épingle du widget « Contrôle » (interrupteurs / bâtiments). */
+export type ControlPinMeta = {
+  kind: "switch" | "building";
+  id: string;
+  label?: string;
+};
+
 export type WidgetMetaEntry = {
   type?: string;
   variant?: WidgetVariant;
   /** Widget `sink` : ne pas afficher les lignes du sink exploration. */
   hideSinkExploration?: boolean;
+  /** Widget `ctrl` : raccourcis interrupteurs / bâtiments. */
+  controlPins?: ControlPinMeta[];
 };
 
 export type DashboardWidgetDef = {
@@ -139,6 +148,15 @@ export const DASHBOARD_WIDGETS: DashboardWidgetDef[] = [
     inCatalog: true,
     removable: true,
   },
+  {
+    id: "ctrl",
+    type: "control_pins",
+    titleKey: "dashboard.widgets.controlCatalog",
+    artClassName: "Build_PriorityPowerSwitch_C",
+    defaultLayout: { w: 5, h: 4, minW: 3, minH: 3 },
+    inCatalog: true,
+    removable: true,
+  },
 ];
 
 export function dashboardWidgetById(id: string): DashboardWidgetDef | undefined {
@@ -179,6 +197,9 @@ export function ensureWidgetMeta(
     const entry: WidgetMetaEntry = { type: def.type, variant: v };
     if (def.id === "sink" && old?.hideSinkExploration === true) {
       entry.hideSinkExploration = true;
+    }
+    if (def.id === "ctrl" && Array.isArray(old?.controlPins) && old.controlPins.length) {
+      entry.controlPins = old.controlPins;
     }
     next[item.i] = entry;
   }

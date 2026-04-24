@@ -249,6 +249,10 @@ app.register(async (scope) => {
   scope.post("/api/frm/write/:path", async (req, reply) => {
     if (denyIfPublicViewer(req, reply)) return;
     const pathParam = (req.params as { path: string }).path;
+    if (pathParam === "setSwitches" || pathParam === "setEnabled") {
+      requireAdmin(req, reply);
+      if (reply.sent) return;
+    }
     if (!frmWritePaths.has(pathParam)) {
       return reply.code(403).send({ error: "FRM write path not allowed" });
     }

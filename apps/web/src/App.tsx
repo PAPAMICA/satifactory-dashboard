@@ -7,6 +7,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { InventoryPage } from "./pages/InventoryPage";
 import { DronesPage } from "./pages/monitoring/DronesPage";
 import { MapPage } from "./pages/monitoring/MapPage";
+import { ControlPage } from "./pages/monitoring/ControlPage";
 import { PowerPage } from "./pages/monitoring/PowerPage";
 import { ProductionPage } from "./pages/monitoring/ProductionPage";
 import { ResourceSinkPage } from "./pages/monitoring/ResourceSinkPage";
@@ -15,6 +16,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { SetupPage } from "./pages/SetupPage";
 import { FicsitPageLoader } from "./components/FicsitPageLoader";
+import { RequireAdmin } from "./components/RequireAdmin";
 import { ShellLayout } from "./components/ShellLayout";
 import { apiFetch } from "./lib/api";
 import { clearAllAuth, isLoggedIn } from "./lib/auth";
@@ -101,6 +103,14 @@ export default function App() {
         <Route path="/resourcesink" element={<ResourceSinkPage />} />
         <Route path="/session" element={<SessionMonitorPage />} />
         <Route path="/production" element={<ProductionPage />} />
+        <Route
+          path="/control"
+          element={
+            <RequireAdmin>
+              <ControlPage />
+            </RequireAdmin>
+          }
+        />
         <Route
           path="/settings"
           element={

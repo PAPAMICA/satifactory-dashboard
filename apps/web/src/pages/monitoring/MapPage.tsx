@@ -1,16 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { apiFetch } from "@/lib/api";
 import { FicsitPageLoader } from "@/components/FicsitPageLoader";
 import { FrmWorldMapPage } from "@/components/FrmWorldMapPage";
 import { MonitoringGate } from "@/components/MonitoringGate";
 import { useFrmRefetchMs } from "@/hooks/useFrmRefetchMs";
-import { apiFetch } from "@/lib/api";
 import { asFrmRowArray } from "@/lib/frmRows";
 import { frmGetUrl } from "@/lib/frmApi";
 
 function MapPageBody() {
   const { t } = useTranslation();
   const refetchMs = useFrmRefetchMs();
+  const { data: me } = useQuery({
+    queryKey: ["me"],
+    queryFn: () => apiFetch<{ isAdmin?: boolean }>("/api/me"),
+    staleTime: 60_000,
+  });
   const q = useQuery({
     queryKey: ["frm", "getMapMarkers"],
     queryFn: () => apiFetch<unknown>(frmGetUrl("getMapMarkers")),
@@ -32,7 +37,7 @@ function MapPageBody() {
         ) : q.isPending ? (
           <FicsitPageLoader className="min-h-[min(72vh,780px)] flex-1 border-0 bg-transparent" />
         ) : (
-          <FrmWorldMapPage markers={rows} scrollWheelZoom className="min-h-0 flex-1" />
+          <FrmWorldMapPage markers={rows} scrollWheelZoom isAdmin={Boolean(me?.isAdmin)} className="min-h-0 flex-1" />
         )}
       </div>
     </div>

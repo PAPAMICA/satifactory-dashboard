@@ -17,6 +17,7 @@
     "monSink": "Sinks",
     "monSession": "Session",
     "monFactory": "Usine",
+    "control": "Contrôle",
     "sidebarCollapse": "Réduire le panneau",
     "sidebarExpand": "Développer le panneau",
     "publicViewerBanner": "Accès public : consultation uniquement (pas de paramètres ni d’actions sur le serveur).",
@@ -157,8 +158,33 @@
       "factoryHint": "{{shown}} ligne(s) affichée(s) sur {{total}}.",
       "elevatorName": "Installation",
       "factoryBuildingType": "Bâtiment",
-      "sinkPhaseProgress": "Progression vers le prochain coupon"
+      "sinkPhaseProgress": "Progression vers le prochain coupon",
+      "controlCatalog": "Contrôle FRM",
+      "controlEmpty": "Aucun raccourci configuré.",
+      "controlEmptyHint": "Activez l’édition du tableau de bord pour ajouter interrupteurs et bâtiments.",
+      "controlAddQuick": "Ajouter depuis la partie",
+      "controlRemovePin": "Retirer ce raccourci",
+      "controlAdminOnly": "Ce widget est réservé aux administrateurs."
     }
+  },
+  "control": {
+    "pageTitle": "Contrôle usine",
+    "pageHint": "Interrupteurs, chaîne de production et générateurs (API FRM setSwitches / setEnabled). Accès administrateur uniquement.",
+    "sectionSwitches": "Interrupteurs électriques",
+    "sectionFactory": "Bâtiments de production",
+    "sectionGenerators": "Générateurs",
+    "factorySearch": "Filtrer par nom ou ID…",
+    "stateOn": "Marche",
+    "stateOff": "Arrêt",
+    "turnOn": "Allumer",
+    "turnOff": "Éteindre",
+    "cutPower": "Couper l’alim.",
+    "restorePower": "Réalimenter",
+    "cutShort": "Off",
+    "onShort": "On",
+    "buildingPower": "Alimentation",
+    "buildingPowerHint": "L’état affiché est synchronisé après vos actions ; la lecture FRM ne fournit pas toujours l’état ON/OFF courant.",
+    "switchPriority": "Priorité groupe : {{n}}"
   },
   "inventory": {
     "title": "Inventaire global",
@@ -337,6 +363,18 @@
     "productionSortDirection": "Sens",
     "productionSortDirAsc": "Croissant",
     "productionSortDirDesc": "Décroissant",
-    "productionCount": "{{n}} ligne(s) correspondant au filtre sur {{total}} bâtiments."
+    "productionCount": "{{n}} ligne(s) correspondant au filtre sur {{total}} bâtiments.",
+    "buildingModalCeilingShort": "plafond",
+    "buildingModalTrendNeedSamples": "Pas assez d’échantillons pour tracer la courbe (attendez quelques rafraîchissements).",
+    "buildingModalLegendProdMw": "Production (réseau)",
+    "buildingModalLegendConsMw": "Consommation (réseau)",
+    "buildingModalGridPowerTitle": "Réseau — production et consommation (MW)",
+    "buildingModalClassMwTitle": "Conso MW de ce type (agrégé)",
+    "generatorDetailTitle": "Générateur — instantané",
+    "generatorMwLive": "Puissance produite",
+    "generatorFuel": "Carburant (quantité)",
+    "generatorSupplement": "Complément (ex. eau, vapeur)",
+    "generatorSupplementCurve": "Complément (conso)",
+    "generatorCurvesTitle": "Tendance — MW produits et complément"
   }
 }

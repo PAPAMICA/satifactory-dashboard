@@ -129,45 +129,17 @@ function readBoundingBox2d(row: Record<string, unknown>): { minX: number; minY: 
   return { minX, minY, maxX, maxY };
 }
 
-function readLocationWorld(row: Record<string, unknown>): { x: number; y: number; rotation: number } | null {
-  const loc = (row.location ?? row.Location) as Record<string, unknown> | undefined;
-  if (!loc) return null;
-  const x = Number(loc.x ?? loc.X);
-  const y = Number(loc.y ?? loc.Y);
-  const rotation = Number(loc.rotation ?? loc.Rotation ?? 0);
-  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
-  return { x, y, rotation: Number.isFinite(rotation) ? rotation : 0 };
-}
-
 /**
- * Rectangle orienté : centre monde (x,y), demi-tailles depuis la bbox, rotation FRM (0–360°, 0=Nord).
- * Coins dans le repère carte deck : [worldX, -worldY].
+ * Bbox monde FRM (axes monde) → rectangle sur la carte `[x, −y]` (sans rotation locale).
+ * Aligné sur la grille Satisfactory / minimap ; évite les dérives d’orientation du pivot + yaw.
  */
-function factoryFootprintPolygon(
-  cx: number,
-  cy: number,
-  halfWx: number,
-  halfWy: number,
-  rotationDeg: number,
-): [number, number][] {
-  const corners: [number, number][] = [
-    [-halfWx, -halfWy],
-    [halfWx, -halfWy],
-    [halfWx, halfWy],
-    [-halfWx, halfWy],
+function footprintPolygonWorldAabbToMap(bbox2: { minX: number; minY: number; maxX: number; maxY: number }): [number, number][] {
+  return [
+    [bbox2.minX, -bbox2.minY],
+    [bbox2.maxX, -bbox2.minY],
+    [bbox2.maxX, -bbox2.maxY],
+    [bbox2.minX, -bbox2.maxY],
   ];
-  // Unreal / Satisfactory : yaw positif autour de Z+ ; en projection XY cela correspond à une rotation horaire
-  // vue du dessus pour aligner les bâtiments avec la carte FRM.
-  const rad = (-rotationDeg * Math.PI) / 180;
-  const cos = Math.cos(rad);
-  const sin = Math.sin(rad);
-  const out: [number, number][] = [];
-  for (const [dx, dy] of corners) {
-    const wx = cx + dx * cos - dy * sin;
-    const wy = cy + dx * sin + dy * cos;
-    out.push([wx, -wy]);
-  }
-  return out;
 }
 
 function endpointsToPath(
@@ -205,14 +177,8 @@ function addBuildingFootprintOrPoint(
   const fill = rgbaForFactoryMapCategory(category);
   const line: [number, number, number, number] = [18, 16, 14, 255];
   const bbox2 = readBoundingBox2d(row);
-  const loc = readLocationWorld(row);
-  if (bbox2 && loc) {
-    const halfWx = (bbox2.maxX - bbox2.minX) / 2;
-    const halfWy = (bbox2.maxY - bbox2.minY) / 2;
-    /** Centre géométrique de la bbox monde : pivot de rotation plus fiable que seul le pivot FRM. */
-    const cx = (bbox2.minX + bbox2.maxX) / 2;
-    const cy = (bbox2.minY + bbox2.maxY) / 2;
-    const poly = factoryFootprintPolygon(cx, cy, halfWx, halfWy, loc.rotation);
+  if (bbox2) {
+    const poly = footprintPolygonWorldAabbToMap(bbox2);
     factoryFootprints.push({ id: displayId, polygon: poly, fill, line, row, category });
   } else {
     factoryPoints.push({ id: displayId, position: pos, color: fill, row, category });
@@ -232,6 +198,8 @@ export function buildFrmMapOverlays(input: {
   pumps?: Record<string, unknown>[] | undefined;
   /** Mineurs / extracteurs. */
   extractors?: Record<string, unknown>[] | undefined;
+  /** HUB, ascenseur spatial, tours radio, sink bâtiment, etc. */
+  specialBuildings?: Record<string, unknown>[] | undefined;
 }): FrmMapOverlays {
   const cableSegments: FrmMapCableSegment[] = [];
   const pipePaths: FrmMapPath[] = [];
@@ -329,6 +297,19 @@ export function buildFrmMapOverlays(input: {
 
   for (let i = 0; i < (input.extractors ?? []).length; i++) {
     const row = input.extractors![i]!;
+    const cn = normalizeFrmBuildingClassName(String(row.ClassName ?? row.className ?? ""));
+    addBuildingFootprintOrPoint(
+      row,
+      factoryMapCategoryFromClassName(cn),
+      seenBuildingKeys,
+      factoryPoints,
+      factoryFootprints,
+      seq++,
+    );
+  }
+
+  for (let i = 0; i < (input.specialBuildings ?? []).length; i++) {
+    const row = input.specialBuildings![i]!;
     const cn = normalizeFrmBuildingClassName(String(row.ClassName ?? row.className ?? ""));
     addBuildingFootprintOrPoint(
       row,

@@ -20,12 +20,15 @@ export type FrmWorldMapPageProps = {
   markers: Record<string, unknown>[];
   scrollWheelZoom?: boolean;
   className?: string;
+  /** Contrôles admin sur la modale bâtiment (alimentation FRM). */
+  isAdmin?: boolean;
 };
 
 export function FrmWorldMapPage({
   markers,
   scrollWheelZoom = true,
   className = "",
+  isAdmin = false,
 }: FrmWorldMapPageProps) {
   const { t } = useTranslation();
   const refetchMs = useFrmRefetchMs();
@@ -260,6 +263,7 @@ export function FrmWorldMapPage({
           row={selectedBuilding}
           onClose={() => setSelectedBuilding(null)}
           showMap={false}
+          showAdminControls={isAdmin}
         />
       : null}
     </div>

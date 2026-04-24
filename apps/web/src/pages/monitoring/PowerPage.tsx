@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { FrmSwitchesPanel } from "@/components/FrmSwitchesPanel";
 import { useTranslation } from "react-i18next";
 import { FicsitPageLoader } from "@/components/FicsitPageLoader";
 import { FrmPowerByBuildingType, totalGeneratorMw } from "@/components/FrmPowerByBuildingType";
@@ -41,6 +42,11 @@ function PowerPageBody() {
   const { t, i18n } = useTranslation();
   const refetchMs = useFrmRefetchMs();
   const [chartWindow, setChartWindow] = useState<ChartTimeWindow>("30m");
+  const { data: me } = useQuery({
+    queryKey: ["me"],
+    queryFn: () => apiFetch<{ isAdmin?: boolean }>("/api/me"),
+    staleTime: 60_000,
+  });
 
   const powerQ = useQuery({
     queryKey: ["frm", "getPower"],
@@ -112,6 +118,20 @@ function PowerPageBody() {
               </div>
             </section>
           )}
+
+          {me?.isAdmin ?
+            <section className="sf-panel min-w-0 overflow-hidden">
+              <div className="sf-panel-header flex min-w-0 flex-wrap items-center gap-2 border-b border-sf-border/40 bg-gradient-to-r from-sf-cyan/10 to-transparent">
+                <ItemThumb className="Build_PriorityPowerSwitch_C" label="" size={28} />
+                <span className="min-w-0 truncate font-medium uppercase tracking-wider text-sf-cream">
+                  {t("control.sectionSwitches")}
+                </span>
+              </div>
+              <div className="max-h-[min(42vh,400px)] overflow-y-auto p-3 sm:p-4">
+                <FrmSwitchesPanel />
+              </div>
+            </section>
+          : null}
 
           <section className="sf-panel flex min-h-[min(45vh,420px)] min-w-0 flex-col overflow-hidden">
             <div className="sf-panel-header flex min-w-0 flex-wrap items-center justify-between gap-2">

@@ -84,6 +84,11 @@ type ProductionSortDir = "asc" | "desc";
 function ProductionPageBody() {
   const { t, i18n } = useTranslation();
   const refetchMs = useFrmRefetchMs();
+  const { data: me } = useQuery({
+    queryKey: ["me"],
+    queryFn: () => apiFetch<{ isAdmin?: boolean }>("/api/me"),
+    staleTime: 60_000,
+  });
   const [filter, setFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<ProductionStatusFilter>("all");
   const [boostFilter, setBoostFilter] = useState<ProductionBoostFilter>("all");
@@ -338,7 +343,14 @@ function ProductionPageBody() {
         )}
       </div>
 
-      {selected ? <ProductionBuildingModal row={selected} onClose={() => setSelected(null)} showMap /> : null}
+      {selected ?
+        <ProductionBuildingModal
+          row={selected}
+          onClose={() => setSelected(null)}
+          showMap
+          showAdminControls={Boolean(me?.isAdmin)}
+        />
+      : null}
     </div>
   );
 }

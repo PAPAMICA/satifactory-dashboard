@@ -13,7 +13,13 @@ type InfraKey =
   | "getStorageInv"
   | "getGenerators"
   | "getPump"
-  | "getExtractor";
+  | "getExtractor"
+  | "getTradingPost"
+  | "getHUBTerminal"
+  | "getSpaceElevator"
+  | "getElevators"
+  | "getResourceSinkBuilding"
+  | "getRadarTower";
 
 const INFRA_KEYS: InfraKey[] = [
   "getFactory",
@@ -24,15 +30,16 @@ const INFRA_KEYS: InfraKey[] = [
   "getGenerators",
   "getPump",
   "getExtractor",
+  "getTradingPost",
+  "getHUBTerminal",
+  "getSpaceElevator",
+  "getElevators",
+  "getResourceSinkBuilding",
+  "getRadarTower",
 ];
 
 /**
- * Données carte « monde » : réseau + **tous les bâtiments** positionnables
- * (usines, stockage, générateurs, pompes, mineurs, …).
- * React Query déduplique avec le reste de l’app (clés identiques).
- *
- * `overlayCountKey` ne change que si le **nombre** d’entités change (pas à chaque refetch) :
- * évite de recadrer la vue à chaque poll.
+ * Données carte « monde » : réseau + bâtiments + **HUB / ascenseur spatial / ascenseurs / sink / radar**, etc.
  */
 export function useFrmMapInfrastructure(enabled: boolean, refetchMs: number | false) {
   const results = useQueries({
@@ -44,7 +51,18 @@ export function useFrmMapInfrastructure(enabled: boolean, refetchMs: number | fa
     })),
   });
 
-  const [fac, cab, pip, bel, sto, gen, pump, ext] = results;
+  const [fac, cab, pip, bel, sto, gen, pump, ext, trade, hub, spaceElev, buildingElevators, sinkB, radar] = results;
+
+  const specialBuildings = useMemo(() => {
+    return [
+      ...asFrmRowArray(trade.data),
+      ...asFrmRowArray(hub.data),
+      ...asFrmRowArray(spaceElev.data),
+      ...asFrmRowArray(buildingElevators.data),
+      ...asFrmRowArray(sinkB.data),
+      ...asFrmRowArray(radar.data),
+    ];
+  }, [trade.data, hub.data, spaceElev.data, buildingElevators.data, sinkB.data, radar.data]);
 
   const overlays: FrmMapOverlays = useMemo(() => {
     return buildFrmMapOverlays({
@@ -56,8 +74,9 @@ export function useFrmMapInfrastructure(enabled: boolean, refetchMs: number | fa
       generators: asFrmRowArray(gen.data),
       pumps: asFrmRowArray(pump.data),
       extractors: asFrmRowArray(ext.data),
+      specialBuildings,
     });
-  }, [fac.data, cab.data, pip.data, bel.data, sto.data, gen.data, pump.data, ext.data]);
+  }, [fac.data, cab.data, pip.data, bel.data, sto.data, gen.data, pump.data, ext.data, specialBuildings]);
 
   const overlayCountKey = useMemo(() => {
     const fc = asFrmRowArray(fac.data).length;
@@ -68,8 +87,9 @@ export function useFrmMapInfrastructure(enabled: boolean, refetchMs: number | fa
     const gc = asFrmRowArray(gen.data).length;
     const ppc = asFrmRowArray(pump.data).length;
     const ec = asFrmRowArray(ext.data).length;
-    return `${fc}:${cc}:${pc}:${bc}:${sc}:${gc}:${ppc}:${ec}`;
-  }, [fac.data, cab.data, pip.data, bel.data, sto.data, gen.data, pump.data, ext.data]);
+    const sp = specialBuildings.length;
+    return `${fc}:${cc}:${pc}:${bc}:${sc}:${gc}:${ppc}:${ec}:${sp}`;
+  }, [fac.data, cab.data, pip.data, bel.data, sto.data, gen.data, pump.data, ext.data, specialBuildings]);
 
   const isPending = results.some((r) => r.isPending);
   const isError = results.some((r) => r.isError);
