@@ -52,7 +52,7 @@ function DronesPageBody() {
   }) => {
     const errMsg = error instanceof Error ? error.message : error ? String(error) : "";
     return (
-      <div className="sf-panel min-w-0 flex-1 overflow-hidden p-3 sm:p-4">
+      <div className="sf-panel flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-3 sm:p-4">
         <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-sf-muted">{title}</h2>
         {errMsg ? (
           <p className="text-sm text-sf-orange">{errMsg}</p>
@@ -61,7 +61,7 @@ function DronesPageBody() {
         ) : !rows.length ? (
           <p className="text-sm text-sf-muted">{t("monitoring.empty")}</p>
         ) : (
-          <ul className="max-h-[min(52vh,440px)] space-y-2 overflow-y-auto">
+          <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain">
             {rows.slice(0, 200).map((r, i) => {
               const cls = rowThumbClass(r, fallbackThumb);
               return (
@@ -84,8 +84,8 @@ function DronesPageBody() {
   };
 
   return (
-    <div className="w-full min-w-0 space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-4">
+      <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
         <h1 className="sf-display text-lg font-semibold uppercase tracking-[0.12em] text-sf-orange sm:text-xl">
           {t("monitoring.droneTitle")}
         </h1>
@@ -95,7 +95,7 @@ function DronesPageBody() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="grid shrink-0 grid-cols-2 gap-2 sm:grid-cols-4">
         <div className="rounded border border-sf-border/60 bg-black/25 px-3 py-2">
           <p className="text-[0.65rem] uppercase tracking-wider text-sf-muted">{t("monitoring.droneFleet")}</p>
           <p className="sf-display mt-1 text-2xl font-semibold text-sf-orange">{formatIntegerSpaces(fleet.length)}</p>
@@ -120,7 +120,7 @@ function DronesPageBody() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 lg:flex-row">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-row">
         <Block
           title={t("monitoring.droneFleet")}
           rows={fleet}

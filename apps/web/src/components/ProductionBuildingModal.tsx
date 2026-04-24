@@ -71,7 +71,7 @@ function efficiencyToneClasses(pct: number): string {
   return "border-red-700/50 bg-red-950/70 text-red-200";
 }
 
-function EfficiencyCapsule({ pct }: { pct: number }) {
+export function EfficiencyCapsule({ pct }: { pct: number }) {
   const n = clampPct(pct);
   return (
     <span
@@ -98,7 +98,7 @@ function ProductionRateTextBlock({
   return (
     <div className="rounded-lg border border-sf-border/70 bg-black/25 p-3 ring-1 ring-white/[0.04]">
       <p className="text-[0.65rem] font-medium uppercase tracking-wider text-sf-muted">{t(titleKey)}</p>
-      <ul className="mt-2 space-y-1 text-xs text-sf-cream">
+      <ul className="mt-2 space-y-1.5 text-xs text-sf-cream">
         {lines.map((line, i) => {
           const label = productionItemDisplayName(line, lang);
           const cur =
@@ -115,16 +115,15 @@ function ProductionRateTextBlock({
           return (
             <li
               key={`${String(line.ClassName)}-${i}`}
-              className="space-y-1 border-b border-sf-border/15 py-1.5 last:border-b-0"
+              className="border-b border-sf-border/15 py-1.5 last:border-b-0"
             >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="min-w-0 flex-1 truncate">{label}</span>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="min-w-0 flex-1 truncate font-medium">{label}</span>
+                <span className="shrink-0 font-mono text-[0.72rem] text-sf-orange tabular-nums">
+                  {formatDecimalSpaces(cur, 2)} / {formatDecimalSpaces(max, 2)}
+                </span>
                 <EfficiencyCapsule pct={effN} />
               </div>
-              <p className="text-right font-mono text-[0.72rem] text-sf-orange tabular-nums">
-                {formatDecimalSpaces(cur, 2)} / {formatDecimalSpaces(max, 2)}{" "}
-                <span className="text-[0.6rem] font-normal text-sf-muted">{t("monitoring.buildingModalCeilingShort")}</span>
-              </p>
             </li>
           );
         })}
@@ -398,13 +397,15 @@ export function ProductionBuildingModal({ row, onClose, showMap = true, showAdmi
               <span className="font-mono">{formatDecimalSpaces(fuelAmt, 3)}</span>
             </li>
             {supplement ?
-              <li>
+              <li className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span className="text-sf-muted">{t("monitoring.generatorSupplement")}: </span>
                 <span className="font-mono">
                   {supName ? `${supName} — ` : null}
-                  {formatDecimalSpaces(supCur, 2)} / {formatDecimalSpaces(supMax, 2)}{" "}
-                  <span className="text-sf-muted">{t("monitoring.buildingModalCeilingShort")}</span>
+                  {formatDecimalSpaces(supCur, 2)} / {formatDecimalSpaces(supMax, 2)}
                 </span>
+                {supMax > 1e-9 ?
+                  <EfficiencyCapsule pct={clampPct((supCur / supMax) * 100)} />
+                : null}
               </li>
             : null}
           </ul>
@@ -414,7 +415,7 @@ export function ProductionBuildingModal({ row, onClose, showMap = true, showAdmi
           <p className="text-[0.65rem] font-medium uppercase tracking-wider text-sf-muted">
             {t("monitoring.productionRecipeItems")}
           </p>
-          <div className="mt-2 max-h-[min(28vh,220px)] overflow-y-auto pr-1 sm:max-h-[min(32vh,280px)]">
+          <div className="mt-2 min-h-0">
             <RecipeOutputsList lines={prodLines} lang={i18n.language} thumbSize={showMap ? 36 : 32} />
           </div>
         </div>
@@ -527,7 +528,7 @@ export function ProductionBuildingModal({ row, onClose, showMap = true, showAdmi
 
   return (
     <div
-      className="fixed inset-0 z-[130] flex flex-col bg-black/80 p-0 sm:p-2"
+      className="fixed inset-0 z-[130] flex items-center justify-center bg-black/80 p-2 sm:bg-black/70 sm:p-4 md:p-6"
       role="presentation"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -539,8 +540,8 @@ export function ProductionBuildingModal({ row, onClose, showMap = true, showAdmi
         aria-labelledby="production-building-modal-title"
         className={
           showMap ?
-            `flex h-[100dvh] max-h-[100dvh] w-full max-w-none flex-col overflow-hidden rounded-none border-0 border-sf-border/80 bg-[#14120f] shadow-2xl ring-1 ring-black/40 sm:mx-auto sm:h-[min(calc(100dvh-16px),920px)] sm:max-h-[min(calc(100dvh-16px),920px)] sm:w-[min(100%,calc(100vw-16px))] sm:max-w-[min(1600px,calc(100vw-16px))] sm:rounded-xl sm:border`
-          : `mx-auto flex max-h-[min(calc(100dvh-24px),720px)] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-sf-border/80 bg-[#14120f] shadow-2xl ring-1 ring-black/40 sm:my-auto`
+            "flex h-[calc(100dvh-1.5rem)] max-h-[calc(100dvh-1.5rem)] w-full max-w-[min(1920px,calc(100vw-1rem))] flex-col overflow-hidden rounded-xl border border-sf-border/80 bg-[#14120f] shadow-2xl ring-1 ring-black/40 sm:h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-2rem)] sm:max-w-[min(1920px,calc(100vw-2rem))]"
+          : "mx-auto flex h-auto max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-sf-border/80 bg-[#14120f] shadow-2xl ring-1 ring-black/40 sm:max-h-[min(720px,calc(100dvh-2rem))]"
         }
         onMouseDown={(e) => e.stopPropagation()}
       >
@@ -577,8 +578,8 @@ export function ProductionBuildingModal({ row, onClose, showMap = true, showAdmi
               <p className="text-[0.65rem] font-medium uppercase tracking-wider text-sf-muted lg:sr-only">
                 {t("monitoring.productionModalMap")}
               </p>
-              <div className="flex min-h-[min(280px,55vw)] flex-1 items-center justify-center lg:min-h-0">
-                <div className="aspect-square w-full max-w-full max-h-full min-h-0 overflow-hidden rounded-lg border border-sf-border/60 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
+              <div className="flex min-h-[min(220px,48vw)] flex-1 flex-col items-stretch lg:min-h-0">
+                <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-lg border border-sf-border/60 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)] aspect-[4/3] max-sm:max-h-[min(52dvh,420px)] lg:aspect-auto lg:max-h-none lg:min-h-[14rem]">
                   <FactoryLocationMap row={row} title={mapPopupTitle} fillParent className="h-full min-h-0 w-full rounded-lg border-0" />
                 </div>
               </div>

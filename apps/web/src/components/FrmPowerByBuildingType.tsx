@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { FractionDonut } from "@/components/FractionDonut";
+import { LinearFractionBar } from "@/components/LinearFractionBar";
 import { ItemThumb } from "@/components/ItemThumb";
 import { usePowerUsageMwByClassHistory } from "@/hooks/usePowerUsageMwByClassHistory";
 import { frmgClassLabel } from "@/lib/dashboardFrmgDisplay";
@@ -150,12 +150,8 @@ export function FrmPowerByBuildingType({
                   <p className="mt-0.5 truncate text-[0.65rem] text-sf-muted" title={row.className}>
                     {t("dashboard.widgets.powerByTypeCount", { count: row.count })}
                   </p>
-                  <div className="mt-2 flex justify-center">
-                    <FractionDonut
-                      fraction={frac}
-                      size={48}
-                      variant={kind === "production" ? "production" : "consumption"}
-                    />
+                  <div className="mt-2">
+                    <LinearFractionBar fraction={frac} kind={kind} />
                   </div>
                   {historyEnabled ?
                     <MiniMwSparkline

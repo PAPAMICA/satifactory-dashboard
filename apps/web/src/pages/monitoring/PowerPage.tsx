@@ -91,8 +91,8 @@ function PowerPageBody() {
   );
 
   return (
-    <div className="flex w-full min-w-0 flex-col gap-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
+      <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
         <h1 className="sf-display text-lg font-semibold uppercase tracking-[0.12em] text-sf-orange sm:text-xl">
           {t("monitoring.powerTitle")}
         </h1>
@@ -102,10 +102,11 @@ function PowerPageBody() {
         </div>
       </div>
 
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain pr-0.5">
       {powerQ.isError ? (
         <p className="text-sm text-sf-orange">{(powerQ.error as Error).message}</p>
       ) : powerQ.isPending ? (
-        <FicsitPageLoader className="min-h-[min(48dvh,420px)] border-0 bg-transparent" />
+        <FicsitPageLoader className="min-h-0 flex-1 border-0 bg-transparent" />
       ) : (
         <>
           {!circuits.length ? (
@@ -132,13 +133,13 @@ function PowerPageBody() {
                   {t("control.sectionSwitches")}
                 </span>
               </div>
-              <div className="max-h-[min(42vh,400px)] overflow-y-auto p-3 sm:p-4">
+              <div className="max-h-[min(50vh,520px)] overflow-y-auto p-3 sm:p-4">
                 <FrmSwitchesPanel />
               </div>
             </section>
           : null}
 
-          <section className="sf-panel flex min-h-[min(45vh,420px)] min-w-0 flex-col overflow-hidden">
+          <section className="sf-panel flex min-h-0 min-w-0 flex-col overflow-hidden md:min-h-[min(36vh,380px)]">
             <div className="sf-panel-header flex min-w-0 flex-wrap items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">
                 <ItemThumb className="Build_PowerStorageMk1_C" label="" size={28} />
@@ -192,7 +193,7 @@ function PowerPageBody() {
                           <td className="max-w-[140px] p-2">
                             <div className="font-mono text-sf-muted">{num(r.BatteryPercent)}</div>
                             <div className="mt-1">
-                              <LinearFractionBar fraction={loadFrac} size={32} />
+                              <LinearFractionBar fraction={loadFrac} />
                             </div>
                           </td>
                           <td className="p-2">{fuse ? <span className="text-sf-danger">●</span> : "—"}</td>
@@ -263,7 +264,7 @@ function PowerPageBody() {
         ) : !usage.length ? (
           <p className="text-sm text-sf-muted">{t("monitoring.empty")}</p>
         ) : (
-          <div className="max-h-[min(55vh,480px)] overflow-auto">
+          <div className="min-h-0 overflow-auto">
             <table className="w-full border-collapse text-left text-xs">
               <thead className="sticky top-0 bg-[#14120f] text-sf-muted">
                 <tr>
@@ -307,8 +308,8 @@ function PowerPageBody() {
                       <td className="p-2 align-middle text-sf-cream">{typeLabel}</td>
                       <td className="p-2 align-middle font-mono text-sf-orange">{num(mw)}</td>
                       <td className="p-2 align-middle">
-                        <div className="flex max-w-[200px] justify-center">
-                          <LinearFractionBar fraction={share} size={36} />
+                        <div className="max-w-[200px]">
+                          <LinearFractionBar fraction={share} />
                         </div>
                       </td>
                     </tr>
@@ -319,6 +320,7 @@ function PowerPageBody() {
           </div>
         )}
       </section>
+      </div>
     </div>
   );
 }

@@ -3,7 +3,11 @@ import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FicsitPageLoader } from "@/components/FicsitPageLoader";
 import { ItemThumb } from "@/components/ItemThumb";
-import { factoryBuildingPrimarySecondary, RecipeOutputsList } from "@/components/ProductionBuildingModal";
+import {
+  EfficiencyCapsule,
+  factoryBuildingPrimarySecondary,
+  RecipeOutputsList,
+} from "@/components/ProductionBuildingModal";
 import { useOpenBuildingDetail } from "@/contexts/BuildingDetailModalContext";
 import { MonitoringGate } from "@/components/MonitoringGate";
 import { useFrmRefetchMs } from "@/hooks/useFrmRefetchMs";
@@ -158,8 +162,8 @@ function ProductionPageBody() {
   );
 
   return (
-    <div className="w-full min-w-0 space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-4">
+      <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="sf-display text-lg font-semibold uppercase tracking-[0.12em] text-sf-orange sm:text-xl">
             {t("monitoring.productionTitle")}
@@ -170,7 +174,7 @@ function ProductionPageBody() {
         <ItemThumb className="Build_ManufacturerMk1_C" label="" size={48} />
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-2">
+      <div className="grid shrink-0 grid-cols-2 gap-2 sm:grid-cols-2">
         <div className="rounded border border-sf-border/60 bg-black/25 px-3 py-2">
           <p className="text-[0.65rem] uppercase tracking-wider text-sf-muted">{t("monitoring.productionStatBuildings")}</p>
           <p className="sf-display mt-1 text-2xl font-semibold text-sf-cream">{formatIntegerSpaces(rows.length)}</p>
@@ -181,7 +185,7 @@ function ProductionPageBody() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex shrink-0 flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <label className="text-xs text-sf-muted">
             {t("monitoring.productionFilter")}
@@ -263,15 +267,15 @@ function ProductionPageBody() {
         </div>
       </div>
 
-      <div className="sf-panel min-w-0 overflow-hidden p-3 sm:p-4">
+      <div className="sf-panel flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-3 sm:p-4">
         {q.isError ?
           <p className="text-sm text-sf-orange">{(q.error as Error).message}</p>
         : q.isPending ?
-          <FicsitPageLoader className="min-h-[min(52dvh,480px)] border-0 bg-transparent" />
+          <FicsitPageLoader className="min-h-0 flex-1 border-0 bg-transparent" />
         : !rows.length ?
           <p className="text-sm text-sf-muted">{t("monitoring.empty")}</p>
         : (
-          <div className="grid max-h-[min(75vh,720px)] gap-3 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mx-auto grid min-h-0 w-full max-w-6xl flex-1 grid-cols-2 gap-2 overflow-y-auto overscroll-contain sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {shown.map((vm, i) => {
               const r = vm.row;
               const thumbCls = factoryBuildingClassForThumb(r);
@@ -283,52 +287,73 @@ function ProductionPageBody() {
               const outPm = factoryTotalCurrentProdPerMin(r);
               const inPm = factoryTotalCurrentConsumePerMin(r);
               const prodLinesCard = factoryProductionLines(r);
+              const pillMuted = "rounded border border-sf-border/50 bg-black/20 px-1.5 py-0.5 text-[0.62rem] text-sf-muted";
+              const netOk = connected && g != null && c != null;
 
               return (
                 <button
                   key={String(r.ID ?? r.id ?? i)}
                   type="button"
                   onClick={() => openRow(r)}
-                  className="flex w-full min-w-0 flex-col gap-2 rounded-lg border border-sf-border/70 bg-black/25 p-3 text-left shadow-sm ring-1 ring-white/[0.04] transition-colors hover:border-sf-orange/40 hover:bg-black/35"
+                  className="relative flex w-full max-w-[13.5rem] flex-col gap-2 rounded-lg border border-sf-border/70 bg-black/25 p-2.5 text-left shadow-sm ring-1 ring-white/[0.04] transition-colors hover:border-sf-orange/40 hover:bg-black/35 sm:max-w-none sm:p-3"
                 >
-                  <div className="flex items-start gap-3">
-                    <ItemThumb className={thumbCls} label={vm.primary} size={44} />
+                  <div className="absolute right-2 top-2 z-[1]">
+                    <EfficiencyCapsule pct={vm.efficiency} />
+                  </div>
+                  <div className="flex items-start gap-2 pr-12 sm:gap-3 sm:pr-14">
+                    <ItemThumb className={thumbCls} label={vm.primary} size={40} />
                     <div className="min-w-0 flex-1">
-                      <p className="font-semibold leading-snug text-sf-cream">{vm.primary}</p>
-                      <p className="mt-0.5 font-mono text-[0.65rem] text-sf-muted">
-                        {t("monitoring.productionFilterEfficiency")}: {formatDecimalSpaces(vm.efficiency, 1)}%
-                      </p>
-                      <div className="mt-2">
-                        <p className="text-[0.65rem] font-medium uppercase tracking-wider text-sf-muted">
-                          {t("monitoring.productionRecipeItems")}
-                        </p>
+                      <p className="pr-1 font-semibold leading-snug text-sf-cream">{vm.primary}</p>
+                      <div className="mt-1.5">
                         <RecipeOutputsList
                           lines={prodLinesCard.slice(0, 4)}
                           lang={i18n.language}
-                          thumbSize={28}
+                          thumbSize={26}
                           dense
                         />
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-1.5 text-[0.65rem] text-sf-muted">
+                  <div className="flex flex-wrap gap-1.5 text-[0.62rem]">
                     {vm.boosted ?
                       <span className="rounded bg-sf-orange/15 px-1.5 py-0.5 font-medium text-sf-orange">
                         {t("monitoring.productionBoost")}
                       </span>
                     : null}
-                    <span className="rounded border border-sf-border/50 px-1.5 py-0.5">
-                      {connected && g != null && c != null ?
-                        t("monitoring.productionConnectShort", { g, c })
-                      : t("monitoring.productionNotConnected")}
+                    <span
+                      className={
+                        netOk ?
+                          "rounded border border-sf-cyan/35 bg-sf-cyan/10 px-1.5 py-0.5 text-[0.62rem] text-sf-cyan"
+                        : pillMuted
+                      }
+                    >
+                      {netOk ? t("monitoring.productionConnectShort", { g, c }) : t("monitoring.productionNotConnected")}
                     </span>
-                    <span className="rounded border border-sf-border/50 px-1.5 py-0.5">
+                    <span
+                      className={
+                        pCur > 0.01 ?
+                          "rounded border border-sf-orange/40 bg-sf-orange/10 px-1.5 py-0.5 font-mono text-[0.62rem] text-sf-orange"
+                        : `${pillMuted} font-mono`
+                      }
+                    >
                       {formatDecimalSpaces(pCur, 2)} / {formatDecimalSpaces(pMax, 2)} MW
                     </span>
-                    <span className="rounded border border-sf-border/50 px-1.5 py-0.5">
+                    <span
+                      className={
+                        outPm > 0 ?
+                          "rounded border border-emerald-600/35 bg-emerald-950/45 px-1.5 py-0.5 font-mono text-[0.62rem] text-emerald-200"
+                        : `${pillMuted} font-mono`
+                      }
+                    >
                       Σ {formatDecimalSpaces(outPm, 2)} /min
                     </span>
-                    <span className="rounded border border-sf-border/50 px-1.5 py-0.5">
+                    <span
+                      className={
+                        inPm > 0 ?
+                          "rounded border border-amber-600/35 bg-amber-950/45 px-1.5 py-0.5 font-mono text-[0.62rem] text-amber-100"
+                        : `${pillMuted} font-mono`
+                      }
+                    >
                       ↓ {formatDecimalSpaces(inPm, 2)} /min
                     </span>
                   </div>

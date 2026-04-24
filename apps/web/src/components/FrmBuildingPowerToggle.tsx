@@ -80,7 +80,7 @@ export function FrmBuildingPowerToggle({ buildingId, buildingClassName, title, s
           </div>
         </div>
         <div className="flex flex-col items-center gap-2 sm:items-end">
-          <FrmIndustrialLever on={guess} busy={busy} onToggle={() => mut.mutate(!guess)} />
+          <FrmIndustrialLever size={compact ? "compact" : "default"} on={guess} busy={busy} onToggle={() => mut.mutate(!guess)} />
         </div>
       </div>
       {err ? <p className="mt-2 text-center text-[0.65rem] text-sf-danger sm:text-left">{err}</p> : null}

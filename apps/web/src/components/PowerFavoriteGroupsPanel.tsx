@@ -123,8 +123,8 @@ export function PowerFavoriteGroupsPanel() {
                 <span className="font-mono text-sm tabular-nums text-sf-orange">
                   {formatDecimalSpaces(mw, 2)} MW
                 </span>
-                <div className="flex w-full max-w-[200px] justify-end">
-                  <LinearFractionBar fraction={share} size={36} />
+                <div className="w-full max-w-[200px]">
+                  <LinearFractionBar fraction={share} />
                 </div>
               </div>
             </li>

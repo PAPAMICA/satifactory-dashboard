@@ -56,8 +56,8 @@ function SessionMonitorPageBody() {
   }, [sessionObj]);
 
   return (
-    <div className="w-full min-w-0 space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain">
+      <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
         <h1 className="sf-display text-lg font-semibold uppercase tracking-[0.12em] text-sf-orange sm:text-xl">
           {t("monitoring.sessionTitle")}
         </h1>
@@ -67,7 +67,7 @@ function SessionMonitorPageBody() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="grid shrink-0 grid-cols-2 gap-2 sm:grid-cols-4">
         <div className="rounded border border-sf-border/60 bg-black/25 px-3 py-2">
           <p className="text-[0.65rem] uppercase tracking-wider text-sf-muted">{t("monitoring.sessionPlayers")}</p>
           <p className="sf-display mt-1 text-2xl font-semibold text-sf-cyan">{formatIntegerSpaces(players.length)}</p>

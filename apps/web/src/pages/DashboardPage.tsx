@@ -7,8 +7,8 @@ import { IconLayers, IconTrendUp } from "@/components/InventoryIcons";
 import { FrmPowerByBuildingType, totalGeneratorMw } from "@/components/FrmPowerByBuildingType";
 import { FrmPowerSummaryGrid } from "@/components/FrmPowerSummaryGrid";
 import { FrmPowerTrendPanel } from "@/components/FrmPowerTrendPanel";
-import { FractionDonut } from "@/components/FractionDonut";
 import { FrmDashboardControlWidget } from "@/components/FrmDashboardControlWidget";
+import { LinearFractionBar } from "@/components/LinearFractionBar";
 import { useOpenBuildingDetail } from "@/contexts/BuildingDetailModalContext";
 import { FicsitPageLoader } from "@/components/FicsitPageLoader";
 import { ItemThumb } from "@/components/ItemThumb";
@@ -212,9 +212,7 @@ function DashboardSinkEntry({
           <p className="text-[0.6rem] uppercase tracking-wider text-sf-muted">{sectionLabel}</p>
           <p className="line-clamp-2 w-full text-center text-sm font-semibold text-sf-cream">{name}</p>
         </div>
-        <div className="flex justify-center py-1">
-          <FractionDonut fraction={pctNum / 100} size={56} />
-        </div>
+        <LinearFractionBar fraction={pctNum / 100} className="py-1" />
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="rounded-md border border-sf-border/60 bg-black/20 px-2 py-1.5">
             <p className="text-[0.58rem] uppercase tracking-wider text-sf-muted">{t("dashboard.widgets.sinkCoupons")}</p>
@@ -250,8 +248,8 @@ function DashboardSinkEntry({
           </span>
           <span className="min-w-0 truncate text-sm font-semibold text-sf-cream">{name}</span>
         </div>
-        <div className="mt-1.5 flex min-w-0 justify-center">
-          <FractionDonut fraction={pctNum / 100} size={40} />
+        <div className="mt-1.5 min-w-0">
+          <LinearFractionBar fraction={pctNum / 100} />
         </div>
         <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-[0.65rem] sm:grid-cols-4 sm:text-xs">
           <div className="min-w-0">
@@ -1438,12 +1436,16 @@ export function DashboardPage() {
   );
 
   if (!layout) {
-    return <FicsitPageLoader className="min-h-[min(70dvh,560px)] flex-1 border-0 bg-transparent" />;
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <FicsitPageLoader className="min-h-0 flex-1 border-0 bg-transparent" />
+      </div>
+    );
   }
 
   return (
-    <div className="w-full min-w-0 space-y-3 sm:space-y-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-3">
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-3 sm:gap-4">
+      <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-3">
         <div className="min-w-0">
           <h1 className="sf-display text-lg font-semibold uppercase tracking-[0.12em] text-sf-orange sm:text-xl sm:tracking-[0.15em]">
             {t("dashboard.title")}
@@ -1514,6 +1516,7 @@ export function DashboardPage() {
         </div>
       </div>
 
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       {!settings?.frmTokenConfigured ? (
         <div className="sf-panel p-3 text-sm text-sf-muted sm:p-4">{t("dashboard.frmMissing")}</div>
       ) : null}
@@ -1528,12 +1531,12 @@ export function DashboardPage() {
           : null}
         </div>
       ) : !isDesktop ? (
-        <div className="flex flex-col gap-3">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain">
           {layoutSorted.map((item) => renderPanel(item.i, { drag: false }))}
         </div>
       ) : (
         <Grid
-          className="min-h-[400px] w-full min-w-0"
+          className="min-h-0 w-full min-w-0 flex-1"
           layout={layout}
           cols={12}
           rowHeight={32}
@@ -1547,6 +1550,7 @@ export function DashboardPage() {
           {layout.map((item) => renderPanel(item.i, { drag: true }))}
         </Grid>
       )}
+      </div>
     </div>
   );
 }
@@ -1663,8 +1667,8 @@ function CostProgressTable({
                 </tr>
                 <tr className="border-b border-sf-border/60 hover:bg-black/20">
                   <td colSpan={colCount} className="min-w-0 max-w-full px-1 pb-0.5 pt-0 sm:px-1.5 sm:pb-1">
-                    <div className="flex justify-center py-1">
-                      <FractionDonut fraction={frac} size={44} />
+                    <div className="py-1">
+                      <LinearFractionBar fraction={frac} />
                     </div>
                   </td>
                 </tr>
@@ -1745,8 +1749,8 @@ function CostProgressCards({
                   <dd className="font-mono text-sf-cyan">{formatIntegerSpaces(Math.round(g))}</dd>
                 </div>
               </dl>
-              <div className="mt-2 flex min-w-0 justify-center">
-                <FractionDonut fraction={frac} size={52} />
+              <div className="mt-2 min-w-0">
+                <LinearFractionBar fraction={frac} />
               </div>
             </div>
           </div>

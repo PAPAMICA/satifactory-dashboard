@@ -105,22 +105,34 @@ export function InventoryPage() {
   }, [mergedItems, q, i18n.language]);
 
   if (settingsLoading) {
-    return <FicsitPageLoader className="min-h-[min(55dvh,480px)] flex-1 border-0 bg-transparent" />;
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <FicsitPageLoader className="min-h-0 flex-1 border-0 bg-transparent" />
+      </div>
+    );
   }
 
   if (!settings?.frmTokenConfigured) {
     return (
-      <div className="w-full min-w-0 sf-panel p-4 text-sm text-sf-muted sm:p-6">
-        {t("dashboard.frmMissing")}
+      <div className="flex min-h-0 flex-1 flex-col justify-center">
+        <div className="w-full min-w-0 sf-panel p-4 text-sm text-sf-muted sm:p-6">{t("dashboard.frmMissing")}</div>
       </div>
     );
   }
 
   if (isLoading) {
-    return <FicsitPageLoader className="min-h-[min(55dvh,480px)] flex-1 border-0 bg-transparent" />;
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <FicsitPageLoader className="min-h-0 flex-1 border-0 bg-transparent" />
+      </div>
+    );
   }
   if (error) {
-    return <p className="text-sf-danger">{t("common.error")}</p>;
+    return (
+      <div className="flex min-h-0 flex-1 flex-col justify-center">
+        <p className="text-sf-danger">{t("common.error")}</p>
+      </div>
+    );
   }
 
   const totalItems = mergedItems.length;
@@ -222,8 +234,8 @@ export function InventoryPage() {
   };
 
   return (
-    <div className="w-full min-w-0 space-y-4 sm:space-y-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-4 sm:gap-5">
+      <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 space-y-1">
           <h1 className="sf-display text-lg font-semibold uppercase tracking-[0.12em] text-sf-orange sm:text-xl sm:tracking-[0.15em]">
             {t("inventory.title")}
@@ -239,7 +251,7 @@ export function InventoryPage() {
         </div>
       </div>
 
-      <div className="sf-panel overflow-hidden p-3 sm:p-4">
+      <div className="sf-panel shrink-0 overflow-hidden p-3 sm:p-4">
         <label className="mb-2 flex items-center gap-2 text-xs uppercase tracking-wider text-sf-muted" htmlFor="inv-search">
           <IconSearch className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
           <span>{t("inventory.search")}</span>
@@ -264,15 +276,15 @@ export function InventoryPage() {
         </div>
       </div>
 
-      <div className="sf-panel overflow-hidden">
-        <div className="sf-panel-header flex flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-4">
+      <div className="sf-panel flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="sf-panel-header flex shrink-0 flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-4">
           <span className="text-[0.65rem] uppercase tracking-wide text-sf-muted">{t("inventory.listTitle")}</span>
           <span className="font-mono text-[0.7rem] text-sf-muted">
             {formatIntegerSpaces(filtered.length)}/{formatIntegerSpaces(totalItems)}
           </span>
         </div>
 
-        <div className="hidden border-b border-sf-border/50 bg-black/15 px-3 py-2 lg:grid lg:grid-cols-[minmax(0,1fr)_3rem_3rem_5.5rem_6.5rem] lg:items-center lg:gap-3 lg:px-4 lg:text-[0.6rem] lg:font-medium lg:uppercase lg:tracking-wider lg:text-sf-muted">
+        <div className="hidden shrink-0 border-b border-sf-border/50 bg-black/15 px-3 py-2 lg:grid lg:grid-cols-[minmax(0,1fr)_3rem_3rem_5.5rem_6.5rem] lg:items-center lg:gap-3 lg:px-4 lg:text-[0.6rem] lg:font-medium lg:uppercase lg:tracking-wider lg:text-sf-muted">
           <span className="flex items-center gap-2 pl-1">
             <IconLayers className="h-4 w-4 opacity-70" aria-hidden />
             {t("inventory.item")}
@@ -295,7 +307,7 @@ export function InventoryPage() {
           </span>
         </div>
 
-        <ul className="max-h-[min(78dvh,720px)] overflow-y-auto overscroll-contain lg:max-h-[min(74dvh,840px)]">
+        <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {filtered.map((row) => rowCard(row))}
         </ul>
       </div>

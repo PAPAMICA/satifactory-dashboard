@@ -111,12 +111,16 @@ export function SettingsPage() {
   }
 
   if (isLoading || !s) {
-    return <FicsitPageLoader className="min-h-[min(50dvh,440px)] flex-1 border-0 bg-transparent" />;
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <FicsitPageLoader className="min-h-0 flex-1 border-0 bg-transparent" />
+      </div>
+    );
   }
 
   return (
-    <div className="w-full min-w-0 space-y-3 sm:space-y-4">
-      <h1 className="sf-display text-lg font-semibold uppercase tracking-[0.12em] text-sf-orange sm:text-xl sm:tracking-[0.15em]">
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain sm:gap-4">
+      <h1 className="sf-display shrink-0 text-lg font-semibold uppercase tracking-[0.12em] text-sf-orange sm:text-xl sm:tracking-[0.15em]">
         {t("settings.title")}
       </h1>
       <form onSubmit={onSubmit} className="sf-panel space-y-4 p-4 sm:p-6">

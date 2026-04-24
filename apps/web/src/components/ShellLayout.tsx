@@ -512,7 +512,7 @@ export function ShellLayout({
   );
 
   return (
-    <div className="flex min-h-[100dvh] items-stretch">
+    <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 items-stretch">
       {/* Mobile overlay */}
       {mobileOpen ? (
         <button
@@ -578,8 +578,8 @@ export function ShellLayout({
       </div>
 
       {/* Zone principale */}
-      <div className="flex min-h-[100dvh] w-full min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-sf-border/60 bg-[#12100e]/95 px-2 py-2 backdrop-blur-sm md:hidden">
+      <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-30 flex shrink-0 items-center gap-2 border-b border-sf-border/60 bg-[#12100e]/95 px-2 py-2 backdrop-blur-sm md:hidden">
           <button
             type="button"
             className="sf-btn inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center px-0"
@@ -618,7 +618,7 @@ export function ShellLayout({
               {t("nav.publicViewerBanner")}
             </div>
           : null}
-          {children}
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
         </main>
       </div>
     </div>

@@ -75,7 +75,7 @@ function SinkSection({
                       <span className="text-sf-muted">{t("monitoring.sinkPercent")}</span>
                       <span className="font-mono text-sf-orange">{String(r.Percent ?? "—")}</span>
                     </div>
-                    <LinearFractionBar fraction={frac} size={44} />
+                    <LinearFractionBar fraction={frac} />
                     <dl className="grid grid-cols-2 gap-1">
                       <dt className="text-sf-muted">{t("monitoring.sinkCoupons")}</dt>
                       <dd className="font-mono text-sf-ok">{String(r.NumCoupon ?? "—")}</dd>
@@ -110,8 +110,8 @@ function ResourceSinkPageBody() {
   });
 
   return (
-    <div className="w-full min-w-0 space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain">
+      <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
         <h1 className="sf-display text-lg font-semibold uppercase tracking-[0.12em] text-sf-orange sm:text-xl">
           {t("monitoring.sinkTitle")}
         </h1>

@@ -204,7 +204,7 @@ function ControlPageBody() {
   const genSlice = generators.slice(0, 200);
 
   return (
-    <div className="w-full min-w-0 space-y-5 pb-6">
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-5 overflow-y-auto overscroll-contain pb-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="sf-display text-lg font-semibold uppercase tracking-[0.12em] text-sf-cyan sm:text-xl">

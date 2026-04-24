@@ -1,0 +1,252 @@
+/**
+ * Interrupteur style « kill switch » 3D (inspiré de Uiverse.io / Nawsome).
+ * Classes préfixées pour éviter les collisions globales.
+ */
+
+.frmIndustrialLever {
+  /* ~0.48× le preset Uiverse d’origine : lisible sans casser les grilles */
+  --il-w: 72px;
+  --il-h: 94px;
+  --il-pad: 10px;
+  --il-radius: 4px;
+  --il-persp: 480px;
+  --il-face-h: 24px;
+  --il-tz: 10px;
+  --il-tilt-off: -22deg;
+  --il-tilt-on: 22deg;
+  position: relative;
+  display: block;
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+  perspective: var(--il-persp);
+}
+
+.frmIndustrialLever:focus-visible {
+  border-radius: var(--il-radius);
+  box-shadow: 0 0 0 2px var(--color-sf-bg-deep, #0c0b09), 0 0 0 4px var(--color-sf-orange, #ff9a1a);
+}
+
+.frmIndustrialLever--compact {
+  --il-w: 52px;
+  --il-h: 68px;
+  --il-pad: 7px;
+  --il-radius: 3px;
+  --il-persp: 360px;
+  --il-face-h: 17px;
+  --il-tz: 7px;
+  --il-tilt-off: -20deg;
+  --il-tilt-on: 20deg;
+}
+
+.frmIndustrialLever:disabled,
+.frmIndustrialLever--disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  pointer-events: none;
+}
+
+.frmIndustrialLever-housing {
+  display: block;
+  box-sizing: border-box;
+  width: var(--il-w);
+  height: var(--il-h);
+  padding: var(--il-pad);
+  background-color: #000;
+  border-radius: var(--il-radius);
+  box-shadow:
+    0 0 8px 2px rgba(0, 0, 0, 0.22),
+    0 0 1px 2px #000,
+    inset 0 2px 2px -2px rgba(255, 255, 255, 0.35),
+    inset 0 0 2px 10px #47434c,
+    inset 0 0 2px 14px #000;
+}
+
+.frmIndustrialLever-plate {
+  display: block;
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  cursor: inherit;
+  transform-style: preserve-3d;
+  transform-origin: center center -18px;
+  transform: translateZ(var(--il-tz)) rotateX(var(--il-tilt-off));
+  transition: all 0.32s cubic-bezier(1, 0, 1, 1);
+  background: linear-gradient(#980000 0%, #6f0000 30%, #6f0000 70%, #980000 100%);
+}
+
+.frmIndustrialLever--compact .frmIndustrialLever-plate {
+  transform-origin: center center -12px;
+}
+
+.frmIndustrialLever-plate--on {
+  transform: translateZ(var(--il-tz)) rotateX(var(--il-tilt-on));
+  box-shadow: 0 -8px 16px rgba(255, 24, 24, 0.75);
+}
+
+.frmIndustrialLever-plate::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: var(--il-face-h);
+  transform-origin: top;
+  transform: rotateX(-90deg);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.75) 10%, rgba(255, 255, 255, 0.28) 30%, #650000 75%, #320000) 50% 50% / 97% 97%,
+    #b10000;
+  background-repeat: no-repeat;
+}
+
+.frmIndustrialLever-plate::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: var(--il-face-h);
+  transform-origin: top;
+  transform: translateY(var(--il-face-h)) rotateX(-90deg);
+  background-image: linear-gradient(#650000, #320000);
+  box-shadow:
+    0 var(--il-face-h) 5px 0 #000,
+    0 calc(var(--il-face-h) * 1.6) 12px 0 rgba(0, 0, 0, 0.45);
+}
+
+.frmIndustrialLever-light {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  animation: frmIndustrialLever-light-off 0.9s ease forwards;
+  background-image: radial-gradient(#ffc97e, #ff1818 40%, transparent 70%);
+}
+
+.frmIndustrialLever-plate--on .frmIndustrialLever-light {
+  opacity: 1;
+  animation: frmIndustrialLever-flicker 0.22s ease-in-out infinite 0.28s;
+}
+
+.frmIndustrialLever-dots {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(transparent 30%, rgba(101, 0, 0, 0.65) 70%);
+  background-size: 8px 8px;
+}
+
+.frmIndustrialLever--compact .frmIndustrialLever-dots {
+  background-size: 5px 5px;
+}
+
+.frmIndustrialLever-characters {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.22;
+  background:
+    linear-gradient(#fff, #fff) 50% 18% / 5% 18%,
+    radial-gradient(circle, transparent 50%, #fff 52%, #fff 68%, transparent 72%) 50% 78% / 32% 24%;
+  background-repeat: no-repeat;
+}
+
+.frmIndustrialLever-shine {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.28;
+  transition: opacity 0.32s cubic-bezier(1, 0, 1, 1);
+  background:
+    linear-gradient(#fff, transparent 3%) 50% 50% / 97% 97%,
+    linear-gradient(rgba(255, 255, 255, 0.45), transparent 50%, transparent 78%, rgba(255, 255, 255, 0.45)) 50% 50% / 97% 97%;
+  background-repeat: no-repeat;
+}
+
+.frmIndustrialLever-plate--on .frmIndustrialLever-shine {
+  opacity: 1;
+}
+
+.frmIndustrialLever-shadow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.32s cubic-bezier(1, 0, 1, 1);
+  background: linear-gradient(transparent 68%, rgba(0, 0, 0, 0.78));
+  background-repeat: no-repeat;
+}
+
+.frmIndustrialLever-plate--on .frmIndustrialLever-shadow {
+  opacity: 0;
+}
+
+.frmIndustrialLever-busy {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--il-radius);
+  background: rgba(0, 0, 0, 0.42);
+  pointer-events: none;
+}
+
+.frmIndustrialLever-busyDot {
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  border: 2px solid rgba(232, 220, 200, 0.2);
+  border-top-color: rgba(232, 220, 200, 0.85);
+  animation: frmIndustrialLever-spin 0.7s linear infinite;
+}
+
+.frmIndustrialLever--compact .frmIndustrialLever-busyDot {
+  width: 16px;
+  height: 16px;
+}
+
+@keyframes frmIndustrialLever-flicker {
+  0% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 0.78;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes frmIndustrialLever-light-off {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes frmIndustrialLever-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .frmIndustrialLever-plate {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .frmIndustrialLever-plate--on .frmIndustrialLever-light {
+    animation: none;
+    opacity: 0.88;
+  }
+
+  .frmIndustrialLever-busyDot {
+    animation-duration: 1.2s;
+  }
+}
