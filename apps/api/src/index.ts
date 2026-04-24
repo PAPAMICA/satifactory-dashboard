@@ -7,6 +7,12 @@ import { authenticateRequest, denyIfPublicViewer, hashPassword, requireAdmin } f
 import { bootstrapAdminFromEnv } from "./bootstrap.js";
 import { deleteKv, getDb, getKv, setKv } from "./db.js";
 import { getFrmConfig, frmFetchJson, frmPostJson } from "./frm.js";
+import {
+  computeAllSinkRatesPerMinute,
+  computeInventoryRatesPerMinute,
+  recordInventorySamples,
+  recordSinkSamples,
+} from "./inventoryAndScalarRates.js";
 import { buildInventorySummary } from "./inventory.js";
 import { queryPowerHistorySince } from "./powerTimeseries.js";
 import { startPowerSampler } from "./powerSampler.js";
@@ -160,12 +166,43 @@ app.register(async (scope) => {
   scope.get("/api/inventory/summary", async (req, reply) => {
     try {
       const items = await buildInventorySummary();
+      const ts = Date.now();
+      try {
+        recordInventorySamples(
+          ts,
+          items.map((i) => ({ className: i.className, amount: i.amount })),
+        );
+      } catch (e) {
+        req.log.warn({ err: e }, "inventory_samples record failed");
+      }
       return { items };
     } catch (e) {
       req.log.error(e);
       return reply.code(502).send({
         error: e instanceof Error ? e.message : "Inventory fetch failed",
       });
+    }
+  });
+
+  scope.get("/api/inventory/rates", async (req, reply) => {
+    try {
+      const rates = computeInventoryRatesPerMinute();
+      void reply.header("Cache-Control", "no-store");
+      return { rates };
+    } catch (e) {
+      req.log.error(e);
+      return reply.code(500).send({ error: "Rates compute failed" });
+    }
+  });
+
+  scope.get("/api/metrics/sink-rates", async (req, reply) => {
+    try {
+      const rates = computeAllSinkRatesPerMinute();
+      void reply.header("Cache-Control", "no-store");
+      return { rates };
+    } catch (e) {
+      req.log.error(e);
+      return reply.code(500).send({ error: "Sink rates compute failed" });
     }
   });
 
@@ -177,6 +214,16 @@ app.register(async (scope) => {
     }
     try {
       const data = await frmFetchJson<unknown>(sub);
+      const ts = Date.now();
+      try {
+        if (sub === "/getResourceSink" || sub.endsWith("getResourceSink")) {
+          recordSinkSamples("resource", data, ts);
+        } else if (sub === "/getExplorationSink" || sub.endsWith("getExplorationSink")) {
+          recordSinkSamples("exploration", data, ts);
+        }
+      } catch (e) {
+        req.log.warn({ err: e }, "sink scalar_samples record failed");
+      }
       void reply.header("Cache-Control", "no-store, no-cache, must-revalidate");
       return data;
     } catch (e) {

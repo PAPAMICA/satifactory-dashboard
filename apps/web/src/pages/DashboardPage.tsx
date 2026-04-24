@@ -9,8 +9,6 @@ import { FrmPowerSummaryGrid } from "@/components/FrmPowerSummaryGrid";
 import { FrmPowerTrendPanel } from "@/components/FrmPowerTrendPanel";
 import { FicsitPageLoader } from "@/components/FicsitPageLoader";
 import { ItemThumb } from "@/components/ItemThumb";
-import { useDeltaPerMinute } from "@/hooks/useDeltaPerMinute";
-import { useInventoryRates } from "@/hooks/useInventoryRates";
 import { useMergedInventoryItems } from "@/hooks/useMergedInventoryItems";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { apiFetch } from "@/lib/api";
@@ -193,12 +191,16 @@ function DashboardSinkEntry({
   row,
   variant,
   sectionLabel,
-  dataUpdatedAt,
+  metricKey,
+  pointsPerMin,
 }: {
   row: Record<string, unknown>;
   variant: WidgetVariant;
   sectionLabel: string;
-  dataUpdatedAt: number;
+  /** Clé API `/api/metrics/sink-rates` (ex. `sink_resource_0`). */
+  metricKey: string;
+  /** Points/min (moyenne dernière minute, séries 2 min en base). */
+  pointsPerMin: number | null;
 }) {
   const { t } = useTranslation();
   const name = String(row.Name ?? "—");
@@ -212,13 +214,11 @@ function DashboardSinkEntry({
     row.PointsToCoupon != null && Number.isFinite(Number(row.PointsToCoupon)) ?
       formatIntegerSpaces(Math.round(Number(row.PointsToCoupon)))
     : "—";
-  const totalPts = Number(row.TotalPoints);
-  const rate = useDeltaPerMinute(Number.isFinite(totalPts) ? totalPts : NaN, dataUpdatedAt);
-  const rateStr = fmtSinkTrendPerMin(rate);
+  const rateStr = fmtSinkTrendPerMin(pointsPerMin);
   const rateClass =
-    rate == null || !Number.isFinite(rate) ? "text-sf-muted"
-    : rate > 0 ? "text-sf-ok"
-    : rate < 0 ? "text-sf-orange"
+    pointsPerMin == null || !Number.isFinite(pointsPerMin) ? "text-sf-muted"
+    : pointsPerMin > 0 ? "text-sf-ok"
+    : pointsPerMin < 0 ? "text-sf-orange"
     : "text-sf-muted";
 
   if (variant === "visual") {
@@ -370,6 +370,24 @@ export function DashboardPage() {
     enabled: frmOk,
   });
 
+  const invRatesQuery = useQuery({
+    queryKey: ["inventory", "rates"],
+    queryFn: () => apiFetch<{ rates: Record<string, number> }>("/api/inventory/rates"),
+    refetchInterval: interval,
+    refetchIntervalInBackground: true,
+    staleTime: 0,
+    enabled: frmOk,
+  });
+
+  const sinkRatesQuery = useQuery({
+    queryKey: ["metrics", "sink-rates"],
+    queryFn: () => apiFetch<{ rates: Record<string, number> }>("/api/metrics/sink-rates"),
+    refetchInterval: interval,
+    refetchIntervalInBackground: true,
+    staleTime: 0,
+    enabled: frmOk,
+  });
+
   const favoritesQuery = useQuery({
     queryKey: ["favorites"],
     queryFn: () => apiFetch<{ favorites: string[] }>("/api/favorites"),
@@ -383,7 +401,7 @@ export function DashboardPage() {
     i18n.language,
   );
 
-  const inventoryRates = useInventoryRates(mergedInvItems, invQuery.dataUpdatedAt ?? 0);
+  const inventoryRates = invRatesQuery.data?.rates ?? {};
 
   const sessionQuery = useQuery({
     queryKey: ["frm", "getSessionInfo"],
@@ -904,8 +922,12 @@ export function DashboardPage() {
     }
     const resRows = asSinkRows(resourceSinkQuery.data);
     const expRows = hideExploration ? [] : asSinkRows(explorationSinkQuery.data);
-    const resUpdated = resourceSinkQuery.dataUpdatedAt ?? 0;
-    const expUpdated = explorationSinkQuery.dataUpdatedAt ?? 0;
+    const sinkRates = sinkRatesQuery.data?.rates ?? {};
+    const ptsMin = (kind: "resource" | "exploration", i: number) => {
+      const k = `sink_${kind}_${i}`;
+      const v = sinkRates[k];
+      return v !== undefined && Number.isFinite(v) ? v : null;
+    };
     if (!resRows.length && !expRows.length) {
       return <p className="p-3 text-sm text-sf-muted">{t("monitoring.empty")}</p>;
     }
@@ -919,7 +941,8 @@ export function DashboardPage() {
                 row={row}
                 variant={variant}
                 sectionLabel={t("dashboard.widgets.sinkResource")}
-                dataUpdatedAt={resUpdated}
+                metricKey={`sink_resource_${i}`}
+                pointsPerMin={ptsMin("resource", i)}
               />
             ))}
             {expRows.map((row, i) => (
@@ -928,7 +951,8 @@ export function DashboardPage() {
                 row={row}
                 variant={variant}
                 sectionLabel={t("dashboard.widgets.sinkExploration")}
-                dataUpdatedAt={expUpdated}
+                metricKey={`sink_exploration_${i}`}
+                pointsPerMin={ptsMin("exploration", i)}
               />
             ))}
           </div>
@@ -944,7 +968,8 @@ export function DashboardPage() {
               row={row}
               variant={variant}
               sectionLabel={t("dashboard.widgets.sinkResource")}
-              dataUpdatedAt={resUpdated}
+              metricKey={`sink_resource_${i}`}
+              pointsPerMin={ptsMin("resource", i)}
             />
           ))}
           {expRows.map((row, i) => (
@@ -953,7 +978,8 @@ export function DashboardPage() {
               row={row}
               variant={variant}
               sectionLabel={t("dashboard.widgets.sinkExploration")}
-              dataUpdatedAt={expUpdated}
+              metricKey={`sink_exploration_${i}`}
+              pointsPerMin={ptsMin("exploration", i)}
             />
           ))}
         </ul>

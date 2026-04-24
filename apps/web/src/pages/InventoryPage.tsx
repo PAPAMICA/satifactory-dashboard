@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { FicsitPageLoader } from "@/components/FicsitPageLoader";
 import { IconBookWiki, IconHeart, IconLayers, IconSearch, IconTrendUp } from "@/components/InventoryIcons";
 import { ItemThumb } from "@/components/ItemThumb";
-import { useInventoryRates } from "@/hooks/useInventoryRates";
 import { useMergedInventoryItems } from "@/hooks/useMergedInventoryItems";
 import { apiFetch } from "@/lib/api";
 import { formatDecimalSpaces, formatIntegerSpaces } from "@/lib/formatNumber";
@@ -50,7 +49,7 @@ export function InventoryPage() {
     staleTime: 30_000,
   });
 
-  const { data, isLoading, error, dataUpdatedAt } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["inventory", "summary"],
     queryFn: () => apiFetch<{ items: InventoryItemRow[] }>("/api/inventory/summary"),
     refetchInterval: pollMs,
@@ -59,8 +58,17 @@ export function InventoryPage() {
     enabled: frmEnabled,
   });
 
+  const { data: ratesData } = useQuery({
+    queryKey: ["inventory", "rates"],
+    queryFn: () => apiFetch<{ rates: Record<string, number> }>("/api/inventory/rates"),
+    refetchInterval: pollMs,
+    refetchIntervalInBackground: true,
+    staleTime: 0,
+    enabled: frmEnabled,
+  });
+
   const mergedItems = useMergedInventoryItems(data?.items, favoritesData?.favorites, i18n.language);
-  const rates = useInventoryRates(mergedItems, dataUpdatedAt);
+  const rates = ratesData?.rates ?? {};
 
   useEffect(() => {
     if (settingsLoading || isLoading || error || !frmEnabled) return;

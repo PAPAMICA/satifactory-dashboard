@@ -59,6 +59,24 @@ function migrate(database: DatabaseSync) {
       fuse_count INTEGER NOT NULL DEFAULT 0
     );
     CREATE INDEX IF NOT EXISTS idx_power_ts_ms ON power_ts (ts_ms);
+
+    /* Échantillons inventaire (2 dernières minutes) — taux = moyenne sur la dernière minute */
+    CREATE TABLE IF NOT EXISTS inventory_samples (
+      ts_ms INTEGER NOT NULL,
+      class_name TEXT NOT NULL,
+      amount REAL NOT NULL,
+      PRIMARY KEY (ts_ms, class_name)
+    );
+    CREATE INDEX IF NOT EXISTS idx_inventory_samples_ts ON inventory_samples (ts_ms);
+
+    /* Échantillons scalaires (sink TotalPoints, etc.) — même fenêtre 2 min */
+    CREATE TABLE IF NOT EXISTS scalar_samples (
+      metric_key TEXT NOT NULL,
+      ts_ms INTEGER NOT NULL,
+      value REAL NOT NULL,
+      PRIMARY KEY (metric_key, ts_ms)
+    );
+    CREATE INDEX IF NOT EXISTS idx_scalar_samples_ts ON scalar_samples (ts_ms);
   `);
 }
 
