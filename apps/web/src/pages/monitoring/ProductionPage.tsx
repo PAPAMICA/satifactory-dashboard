@@ -162,7 +162,7 @@ function ProductionPageBody() {
   );
 
   return (
-    <div className="flex w-full min-w-0 flex flex-col gap-4">
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-4">
       <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="sf-display text-lg font-semibold uppercase tracking-[0.12em] text-sf-orange sm:text-xl">
@@ -267,7 +267,7 @@ function ProductionPageBody() {
         </div>
       </div>
 
-      <div className="sf-panel flex min-w-0 flex-col overflow-hidden p-3 sm:p-4">
+      <div className="sf-panel flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-3 sm:p-4">
         {q.isError ?
           <p className="text-sm text-sf-orange">{(q.error as Error).message}</p>
         : q.isPending ?
@@ -275,7 +275,7 @@ function ProductionPageBody() {
         : !rows.length ?
           <p className="text-sm text-sf-muted">{t("monitoring.empty")}</p>
         : (
-          <div className="mx-auto grid w-full max-w-[min(100%,96rem)] grid-cols-[repeat(auto-fill,minmax(10.75rem,1fr))] gap-x-2 gap-y-2.5 px-0.5 sm:gap-x-2.5 sm:gap-y-3 sm:px-1">
+          <div className="mx-auto grid min-h-0 w-full max-w-[min(100%,96rem)] flex-1 grid-cols-[repeat(auto-fill,minmax(14.5rem,1fr))] gap-x-2.5 gap-y-3 px-0.5 sm:grid-cols-[repeat(auto-fill,minmax(15.5rem,1fr))] sm:gap-x-3 sm:gap-y-3.5 sm:px-1">
             {shown.map((vm, i) => {
               const r = vm.row;
               const thumbCls = factoryBuildingClassForThumb(r);
@@ -301,7 +301,7 @@ function ProductionPageBody() {
                   key={String(r.ID ?? r.id ?? i)}
                   type="button"
                   onClick={() => openRow(r)}
-                  className="relative flex w-full max-w-[11rem] flex-col gap-1.5 rounded-lg border border-sf-border/70 bg-black/25 p-2 text-left shadow-sm ring-1 ring-white/[0.04] transition-colors hover:border-sf-orange/40 hover:bg-black/35 justify-self-center sm:max-w-[11.25rem] sm:p-2.5"
+                  className="relative flex w-full max-w-full flex-col gap-1.5 rounded-lg border border-sf-border/70 bg-black/25 p-2.5 text-left shadow-sm ring-1 ring-white/[0.04] transition-colors hover:border-sf-orange/40 hover:bg-black/35 sm:gap-2 sm:p-3"
                 >
                   <div className="absolute right-1.5 top-1.5 z-[1] sm:right-2 sm:top-2">
                     <EfficiencyCapsule pct={vm.efficiency} />

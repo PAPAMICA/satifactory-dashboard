@@ -119,7 +119,7 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="flex w-full min-w-0 flex flex-col gap-3 sm:gap-4">
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-3 sm:gap-4">
       <h1 className="sf-display shrink-0 text-lg font-semibold uppercase tracking-[0.12em] text-sf-orange sm:text-xl sm:tracking-[0.15em]">
         {t("settings.title")}
       </h1>

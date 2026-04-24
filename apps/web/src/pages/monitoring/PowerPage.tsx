@@ -91,7 +91,7 @@ function PowerPageBody() {
   );
 
   return (
-    <div className="flex w-full min-w-0 flex flex-col">
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
       <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
         <h1 className="sf-display text-lg font-semibold uppercase tracking-[0.12em] text-sf-orange sm:text-xl">
           {t("monitoring.powerTitle")}
@@ -102,7 +102,7 @@ function PowerPageBody() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 pr-0.5">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 pr-0.5">
       {powerQ.isError ? (
         <p className="text-sm text-sf-orange">{(powerQ.error as Error).message}</p>
       ) : powerQ.isPending ? (

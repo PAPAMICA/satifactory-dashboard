@@ -234,7 +234,7 @@ export function InventoryPage() {
   };
 
   return (
-    <div className="flex w-full min-w-0 flex flex-col gap-4 sm:gap-5">
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-4 sm:gap-5">
       <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 space-y-1">
           <h1 className="sf-display text-lg font-semibold uppercase tracking-[0.12em] text-sf-orange sm:text-xl sm:tracking-[0.15em]">
@@ -276,7 +276,7 @@ export function InventoryPage() {
         </div>
       </div>
 
-      <div className="sf-panel flex flex-col overflow-hidden">
+      <div className="sf-panel flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="sf-panel-header flex shrink-0 flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-4">
           <span className="text-[0.65rem] uppercase tracking-wide text-sf-muted">{t("inventory.listTitle")}</span>
           <span className="font-mono text-[0.7rem] text-sf-muted">
@@ -307,7 +307,7 @@ export function InventoryPage() {
           </span>
         </div>
 
-        <ul>
+        <ul className="flex min-h-0 flex-1 flex-col">
           {filtered.map((row) => rowCard(row))}
         </ul>
       </div>

@@ -5,6 +5,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./i18n";
 import "./index.css";
+import { registerImageCacheServiceWorker } from "./registerImageCacheSw";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
@@ -21,6 +22,10 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+if (import.meta.env.PROD) {
+  registerImageCacheServiceWorker();
+}
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

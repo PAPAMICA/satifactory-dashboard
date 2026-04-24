@@ -15,7 +15,7 @@ export function MonitoringGate({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="flex w-full min-w-0 flex-col">
+      <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
         <FicsitPageLoader density="compact" className="min-h-52 border-0 bg-transparent" />
       </div>
     );
@@ -23,7 +23,7 @@ export function MonitoringGate({ children }: { children: React.ReactNode }) {
 
   if (!s?.frmTokenConfigured) {
     return (
-      <div className="flex w-full min-w-0 flex-col justify-center space-y-3 py-6">
+      <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col justify-center space-y-3 py-6">
         <div className="sf-panel border-sf-orange/40 p-4 text-sm text-sf-muted">
           <p>{t("monitoring.frmNotConfigured")}</p>
           <Link to="/settings" className="mt-2 inline-block text-sf-orange underline-offset-2 hover:underline">
@@ -34,5 +34,5 @@ export function MonitoringGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return <div className="flex w-full min-w-0 flex-col">{children}</div>;
+  return <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">{children}</div>;
 }
