@@ -1,3 +1,7 @@
+import {
+  factoryMapCategoryFromClassName,
+  normalizeFrmBuildingClassName,
+} from "@/lib/frmFactoryMapCategory";
 import { colorSlotToCss } from "@/lib/mapMarkerDisplay";
 
 /** Couleurs distinctes par type de repère carte FRM. */
@@ -54,6 +58,26 @@ const MAP_ENTITY_FAMILY_RGBA: Record<"cable" | "pipe" | "belt" | "factory", [num
 export function rgbaForMapInfraFamily(family: keyof typeof MAP_ENTITY_FAMILY_RGBA): [number, number, number, number] {
   const c = MAP_ENTITY_FAMILY_RGBA[family];
   return [c[0]!, c[1]!, c[2]!, c[3]!];
+}
+
+const FACTORY_MAP_CATEGORY_RGBA: Record<FrmFactoryMapCategory, [number, number, number, number]> = {
+  /** Stockage : ambre (proche caisses / conteneurs) */
+  storage: [251, 191, 36, 242],
+  /** Production d’énergie : vert électrique */
+  power: [52, 211, 153, 242],
+  /** Autres bâtiments (production, extracteurs, etc.) : orange usine */
+  production: [249, 115, 22, 240],
+};
+
+export function rgbaForFactoryMapCategory(cat: FrmFactoryMapCategory): [number, number, number, number] {
+  const c = FACTORY_MAP_CATEGORY_RGBA[cat];
+  return [c[0]!, c[1]!, c[2]!, c[3]!];
+}
+
+/** Légende / cases à cocher alignées sur les empreintes bâtiments. */
+export function factoryMapCategoryCssRgba(cat: FrmFactoryMapCategory): string {
+  const [r, g, b, a] = rgbaForFactoryMapCategory(cat);
+  return `rgba(${r}, ${g}, ${b}, ${a / 255})`;
 }
 
 /** Valeur CSS `rgba(...)` alignée sur la couche carte (légendes / cases à cocher). */
@@ -115,6 +139,9 @@ export function markerFillFromFrmRow(row: Record<string, unknown>): [number, num
   const typ = String(row.MapMarkerType ?? row.mapMarkerType ?? "");
   if (typ && typ !== "RT_Default") return MAP_MARKER_TYPE_RGBA[typ] ?? MAP_MARKER_TYPE_RGBA.RT_Default;
   const cn = String(row.ClassName ?? row.className ?? "").trim();
-  if (cn) return rgbaForMapEntity(cn, "factory");
+  if (cn) {
+    const cat = factoryMapCategoryFromClassName(normalizeFrmBuildingClassName(cn));
+    return rgbaForFactoryMapCategory(cat);
+  }
   return MAP_MARKER_TYPE_RGBA.RT_Default;
 }

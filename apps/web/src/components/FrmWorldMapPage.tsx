@@ -11,7 +11,7 @@ import { useFrmMapInfrastructure } from "@/hooks/useFrmMapInfrastructure";
 import { useFrmMapMarkerFilters } from "@/hooks/useFrmMapMarkerFilters";
 import { useFrmRefetchMs } from "@/hooks/useFrmRefetchMs";
 import { defaultFrmMapLayerVisibility, type FrmMapLayerVisibility } from "@/lib/frmMapOverlays";
-import { mapInfraToggleCssRgba } from "@/lib/frmMapPalette";
+import { factoryMapCategoryCssRgba, mapInfraToggleCssRgba } from "@/lib/frmMapPalette";
 import { frmMarkerMapPosition } from "@/lib/frmMapWorld";
 import { thumbClassForMapMarker } from "@/lib/mapMarkerDisplay";
 
@@ -151,6 +151,27 @@ export function FrmWorldMapPage({
           </li>
         ))}
       </ul>
+      <div className="mt-2 border-t border-sf-border/40 pt-2">
+        <p className="text-[0.65rem] uppercase tracking-wider text-sf-muted">{t("monitoring.mapBuildingColorsTitle")}</p>
+        <ul className="mt-1.5 space-y-1 text-[0.65rem] text-sf-cream">
+          {(
+            [
+              ["storage", "mapLegendStorage"],
+              ["power", "mapLegendPower"],
+              ["production", "mapLegendProduction"],
+            ] as const
+          ).map(([cat, labelKey]) => (
+            <li key={cat} className="flex items-center gap-2">
+              <span
+                className="h-2.5 w-2.5 shrink-0 rounded-sm ring-1 ring-black/50"
+                style={{ backgroundColor: factoryMapCategoryCssRgba(cat) }}
+                aria-hidden
+              />
+              <span>{t(`monitoring.${labelKey}`)}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
       {infraPending ? <p className="text-[0.65rem] text-sf-muted">{t("monitoring.mapInfraLoading")}</p> : null}
       {infraError ? <p className="text-[0.65rem] text-sf-orange">{t("monitoring.mapInfraError")}</p> : null}
     </div>

@@ -1,5 +1,10 @@
+import {
+  factoryMapCategoryFromClassName,
+  normalizeFrmBuildingClassName,
+  type FrmFactoryMapCategory,
+} from "@/lib/frmFactoryMapCategory";
 import { frmMarkerMapPosition } from "@/lib/frmMapWorld";
-import { rgbaForMapInfraFamily } from "@/lib/frmMapPalette";
+import { rgbaForFactoryMapCategory, rgbaForMapInfraFamily } from "@/lib/frmMapPalette";
 
 export type FrmMapLayerVisibility = {
   factories: boolean;
@@ -92,8 +97,8 @@ function splineToPath(spline: unknown): [number, number][] | null {
   for (const pt of spline) {
     if (!pt || typeof pt !== "object") continue;
     const o = pt as Record<string, unknown>;
-    const x = Number(o.x);
-    const y = Number(o.y);
+    const x = Number(o.x ?? o.X);
+    const y = Number(o.y ?? o.Y);
     if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
     out.push([x, -y]);
   }
@@ -107,10 +112,10 @@ function readBoundingBox2d(row: Record<string, unknown>): { minX: number; minY: 
   const min = (o.min ?? o.Min) as Record<string, unknown> | undefined;
   const max = (o.max ?? o.Max) as Record<string, unknown> | undefined;
   if (!min || !max) return null;
-  const minX = Number(min.x);
-  const minY = Number(min.y);
-  const maxX = Number(max.x);
-  const maxY = Number(max.y);
+  const minX = Number(min.x ?? min.X);
+  const minY = Number(min.y ?? min.Y);
+  const maxX = Number(max.x ?? max.X);
+  const maxY = Number(max.y ?? max.Y);
   if (![minX, minY, maxX, maxY].every(Number.isFinite)) return null;
   if (maxX <= minX || maxY <= minY) return null;
   return { minX, minY, maxX, maxY };
@@ -119,8 +124,8 @@ function readBoundingBox2d(row: Record<string, unknown>): { minX: number; minY: 
 function readLocationWorld(row: Record<string, unknown>): { x: number; y: number; rotation: number } | null {
   const loc = (row.location ?? row.Location) as Record<string, unknown> | undefined;
   if (!loc) return null;
-  const x = Number(loc.x);
-  const y = Number(loc.y);
+  const x = Number(loc.x ?? loc.X);
+  const y = Number(loc.y ?? loc.Y);
   const rotation = Number(loc.rotation ?? loc.Rotation ?? 0);
   if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
   return { x, y, rotation: Number.isFinite(rotation) ? rotation : 0 };
@@ -162,10 +167,10 @@ function endpointsToPath(
   b: Record<string, unknown> | undefined,
 ): [number, number][] | null {
   if (!a || !b) return null;
-  const x0 = Number(a.x);
-  const y0 = Number(a.y);
-  const x1 = Number(b.x);
-  const y1 = Number(b.y);
+  const x0 = Number(a.x ?? a.X);
+  const y0 = Number(a.y ?? a.Y);
+  const x1 = Number(b.x ?? b.X);
+  const y1 = Number(b.y ?? b.Y);
   if (!Number.isFinite(x0) || !Number.isFinite(y0) || !Number.isFinite(x1) || !Number.isFinite(y1)) return null;
   return [
     [x0, -y0],
@@ -173,11 +178,49 @@ function endpointsToPath(
   ];
 }
 
+function addBuildingFootprintOrPoint(
+  row: Record<string, unknown>,
+  category: FrmFactoryMapCategory,
+  seenKeys: Set<string>,
+  factoryPoints: FrmMapFactoryPoint[],
+  factoryFootprints: FrmMapFactoryFootprint[],
+  seq: number,
+): void {
+  const pos = frmMarkerMapPosition(row);
+  if (!pos) return;
+  const idRaw = String(row.ID ?? row.Id ?? "").trim();
+  const dedupeKey = idRaw || `pos:${Math.round(pos[0])}:${Math.round(pos[1])}`;
+  if (seenKeys.has(dedupeKey)) return;
+  seenKeys.add(dedupeKey);
+
+  const displayId = idRaw || `b-${category}-${seq}`;
+  const fill = rgbaForFactoryMapCategory(category);
+  const line: [number, number, number, number] = [18, 16, 14, 255];
+  const bbox2 = readBoundingBox2d(row);
+  const loc = readLocationWorld(row);
+  if (bbox2 && loc) {
+    const halfWx = (bbox2.maxX - bbox2.minX) / 2;
+    const halfWy = (bbox2.maxY - bbox2.minY) / 2;
+    const poly = factoryFootprintPolygon(loc.x, loc.y, halfWx, halfWy, loc.rotation);
+    factoryFootprints.push({ id: displayId, polygon: poly, fill, line });
+  } else {
+    factoryPoints.push({ id: displayId, position: pos, color: fill });
+  }
+}
+
 export function buildFrmMapOverlays(input: {
   factories: Record<string, unknown>[] | undefined;
   cables: Record<string, unknown>[] | undefined;
   pipes: Record<string, unknown>[] | undefined;
   belts: Record<string, unknown>[] | undefined;
+  /** Stockage dédié (souvent absent de `getFactory`). */
+  storage?: Record<string, unknown>[] | undefined;
+  /** Générateurs (FRM : liste séparée). */
+  generators?: Record<string, unknown>[] | undefined;
+  /** Pompes pipeline. */
+  pumps?: Record<string, unknown>[] | undefined;
+  /** Mineurs / extracteurs. */
+  extractors?: Record<string, unknown>[] | undefined;
 }): FrmMapOverlays {
   const cableSegments: FrmMapCableSegment[] = [];
   const pipePaths: FrmMapPath[] = [];
@@ -228,23 +271,62 @@ export function buildFrmMapOverlays(input: {
     beltPaths.push({ id: id || `belt-${beltPaths.length}`, path, color: col });
   }
 
+  const seenBuildingKeys = new Set<string>();
+  let seq = 0;
+
   for (let i = 0; i < (input.factories ?? []).length; i++) {
     const row = input.factories![i]!;
-    const pos = frmMarkerMapPosition(row);
-    if (!pos) continue;
-    const id = String(row.ID ?? row.Id ?? `fab-${i}`);
-    const col = rgbaForMapInfraFamily("factory");
-    const line: [number, number, number, number] = [18, 16, 14, 255];
-    const bbox2 = readBoundingBox2d(row);
-    const loc = readLocationWorld(row);
-    if (bbox2 && loc) {
-      const halfWx = (bbox2.maxX - bbox2.minX) / 2;
-      const halfWy = (bbox2.maxY - bbox2.minY) / 2;
-      const poly = factoryFootprintPolygon(loc.x, loc.y, halfWx, halfWy, loc.rotation);
-      factoryFootprints.push({ id, polygon: poly, fill: col, line });
-    } else {
-      factoryPoints.push({ id, position: pos, color: col });
-    }
+    const cn = normalizeFrmBuildingClassName(String(row.ClassName ?? row.className ?? ""));
+    const category = factoryMapCategoryFromClassName(cn);
+    addBuildingFootprintOrPoint(row, category, seenBuildingKeys, factoryPoints, factoryFootprints, seq++);
+  }
+
+  for (let i = 0; i < (input.storage ?? []).length; i++) {
+    addBuildingFootprintOrPoint(
+      input.storage![i]!,
+      "storage",
+      seenBuildingKeys,
+      factoryPoints,
+      factoryFootprints,
+      seq++,
+    );
+  }
+
+  for (let i = 0; i < (input.generators ?? []).length; i++) {
+    addBuildingFootprintOrPoint(
+      input.generators![i]!,
+      "power",
+      seenBuildingKeys,
+      factoryPoints,
+      factoryFootprints,
+      seq++,
+    );
+  }
+
+  for (let i = 0; i < (input.pumps ?? []).length; i++) {
+    const row = input.pumps![i]!;
+    const cn = normalizeFrmBuildingClassName(String(row.ClassName ?? row.className ?? ""));
+    addBuildingFootprintOrPoint(
+      row,
+      factoryMapCategoryFromClassName(cn),
+      seenBuildingKeys,
+      factoryPoints,
+      factoryFootprints,
+      seq++,
+    );
+  }
+
+  for (let i = 0; i < (input.extractors ?? []).length; i++) {
+    const row = input.extractors![i]!;
+    const cn = normalizeFrmBuildingClassName(String(row.ClassName ?? row.className ?? ""));
+    addBuildingFootprintOrPoint(
+      row,
+      factoryMapCategoryFromClassName(cn),
+      seenBuildingKeys,
+      factoryPoints,
+      factoryFootprints,
+      seq++,
+    );
   }
 
   return { cableSegments, pipePaths, beltPaths, factoryPoints, factoryFootprints };

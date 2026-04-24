@@ -5,7 +5,7 @@ import { useFrmMapInfrastructure } from "@/hooks/useFrmMapInfrastructure";
 import { useFrmMapMarkerFilters } from "@/hooks/useFrmMapMarkerFilters";
 import { useFrmRefetchMs } from "@/hooks/useFrmRefetchMs";
 import { defaultFrmMapLayerVisibility, type FrmMapLayerVisibility } from "@/lib/frmMapOverlays";
-import { mapInfraToggleCssRgba } from "@/lib/frmMapPalette";
+import { factoryMapCategoryCssRgba, mapInfraToggleCssRgba } from "@/lib/frmMapPalette";
 
 export type FrmWorldMapCompactProps = {
   markers: Record<string, unknown>[];
@@ -84,6 +84,26 @@ export function FrmWorldMapCompact({
                 <span>{t(`monitoring.${labelKey}`)}</span>
               </label>
             ))}
+            <div className="w-full border-t border-sf-border/40 pt-2">
+              <span className="text-sf-muted">{t("monitoring.mapBuildingColorsTitle")}:</span>{" "}
+              {(
+                [
+                  ["storage", "mapLegendStorage"],
+                  ["power", "mapLegendPower"],
+                  ["production", "mapLegendProduction"],
+                ] as const
+              ).map(([cat, labelKey], i) => (
+                <span key={cat} className="inline-flex items-center gap-0.5">
+                  {i > 0 ? <span className="text-sf-muted"> · </span> : null}
+                  <span
+                    className="inline-block h-2 w-2 shrink-0 rounded-sm align-middle ring-1 ring-black/50"
+                    style={{ backgroundColor: factoryMapCategoryCssRgba(cat) }}
+                    aria-hidden
+                  />
+                  <span className="text-sf-muted">{t(`monitoring.${labelKey}`)}</span>
+                </span>
+              ))}
+            </div>
             {infraPending ? <span className="w-full text-sf-muted">{t("monitoring.mapInfraLoading")}</span> : null}
           </div>
         ) : null}

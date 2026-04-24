@@ -27,7 +27,10 @@ const MAP_MARKER_TYPE_THUMB: Record<string, string> = {
 
 export function markerLocation(r: Record<string, unknown>): { x: unknown; y: unknown; z: unknown } {
   const l = (r.location ?? r.Location) as Record<string, unknown> | undefined;
-  return { x: l?.x ?? r.x, y: l?.y ?? r.y, z: l?.z ?? r.z };
+  const x = l?.x ?? l?.X;
+  const y = l?.y ?? l?.Y;
+  const z = l?.z ?? l?.Z;
+  return { x: x ?? r.x, y: y ?? r.y, z: z ?? r.z };
 }
 
 export function markerLatLng(r: Record<string, unknown>): [number, number] | null {
