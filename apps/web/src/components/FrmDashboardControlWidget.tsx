@@ -435,7 +435,7 @@ export function FrmDashboardControlWidget({ variant }: Props) {
   const thumb = visual ? 34 : 22;
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+    <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col ">
       {visual ?
         <ul className={cardUl}>
           {cards.map((c) => {

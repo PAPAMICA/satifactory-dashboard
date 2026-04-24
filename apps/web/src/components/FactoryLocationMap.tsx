@@ -30,12 +30,12 @@ export function FactoryLocationMap({
   const pos = useMemo(() => frmMarkerMapPosition(mapRow), [mapRow]);
 
   const containerClass = fillParent
-    ? `relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden rounded border border-sf-border/50 ${className}`
-    : `relative overflow-hidden rounded border border-sf-border/50 ${className}`;
+    ? `relative flex h-full min-h-0 w-full flex-1 flex-col  rounded border border-sf-border/50 ${className}`
+    : `relative  rounded border border-sf-border/50 ${className}`;
 
   const mapWrapClass = fillParent
-    ? "relative flex min-h-[220px] flex-1 basis-0 flex-col overflow-hidden"
-    : "relative flex h-[min(40vh,320px)] min-h-[220px] flex-col overflow-hidden";
+    ? "relative flex min-h-[220px] flex-1 basis-0 flex-col "
+    : "relative flex h-[min(40vh,320px)] min-h-[220px] flex-col ";
 
   if (!pos) {
     return (

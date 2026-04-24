@@ -255,7 +255,7 @@ function ControlPageBody() {
         </div>
       </header>
 
-      <section className="sf-panel overflow-hidden">
+      <section className="sf-panel ">
         <div className="sf-panel-header flex flex-wrap items-center justify-between gap-2 border-b border-sf-border/50 bg-gradient-to-r from-sf-orange/12 to-transparent">
           <div className="flex min-w-0 items-center gap-2">
             <ItemThumb className="Build_PowerStorageMk1_C" label="" size={28} />
@@ -278,7 +278,7 @@ function ControlPageBody() {
         isAdmin={isAdmin}
       />
 
-      <section className="sf-panel overflow-hidden">
+      <section className="sf-panel ">
         <div className="sf-panel-header flex flex-wrap items-center gap-2 border-b border-sf-border/50 bg-gradient-to-r from-sf-cyan/10 to-transparent">
           <ItemThumb className="Build_PriorityPowerSwitch_C" label="" size={28} />
           <span className="font-medium uppercase tracking-wider text-sf-cream">{t("control.sectionSwitches")}</span>
@@ -288,7 +288,7 @@ function ControlPageBody() {
         </div>
       </section>
 
-      <section className="sf-panel overflow-hidden">
+      <section className="sf-panel ">
         <div className="sf-panel-header flex flex-col gap-2 border-b border-sf-border/50 bg-gradient-to-r from-sf-orange/10 to-transparent sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <ItemThumb className="Build_ManufacturerMk1_C" label="" size={28} />
@@ -320,7 +320,7 @@ function ControlPageBody() {
         </div>
       </section>
 
-      <section className="sf-panel overflow-hidden">
+      <section className="sf-panel ">
         <div className="sf-panel-header flex flex-col gap-2 border-b border-sf-border/50 bg-gradient-to-r from-sf-ok/10 to-transparent sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <ItemThumb className="Build_GeneratorNuclear_C" label="" size={28} />

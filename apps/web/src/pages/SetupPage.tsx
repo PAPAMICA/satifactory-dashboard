@@ -28,7 +28,7 @@ export function SetupPage({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="flex min-h-[100dvh] w-full min-w-0 items-center justify-center px-3 py-6 sf-grid-bg sm:p-4">
-      <div className="sf-panel w-full min-w-0 overflow-hidden">
+      <div className="sf-panel w-full min-w-0 ">
         <div className="sf-panel-header">{t("setup.title")}</div>
         <form onSubmit={onSubmit} className="space-y-4 p-4 sm:p-6">
           <p className="text-sm leading-relaxed text-sf-muted">{t("setup.subtitle")}</p>

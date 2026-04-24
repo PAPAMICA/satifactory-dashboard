@@ -251,7 +251,7 @@ export function InventoryPage() {
         </div>
       </div>
 
-      <div className="sf-panel shrink-0 overflow-hidden p-3 sm:p-4">
+      <div className="sf-panel shrink-0  p-3 sm:p-4">
         <label className="mb-2 flex items-center gap-2 text-xs uppercase tracking-wider text-sf-muted" htmlFor="inv-search">
           <IconSearch className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
           <span>{t("inventory.search")}</span>
@@ -276,7 +276,7 @@ export function InventoryPage() {
         </div>
       </div>
 
-      <div className="sf-panel flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="sf-panel flex min-h-0 flex-1 flex-col ">
         <div className="sf-panel-header flex shrink-0 flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-4">
           <span className="text-[0.65rem] uppercase tracking-wide text-sf-muted">{t("inventory.listTitle")}</span>
           <span className="font-mono text-[0.7rem] text-sf-muted">

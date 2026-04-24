@@ -100,7 +100,7 @@ export function AdminPage() {
         ) : null}
       </form>
 
-      <div className="sf-panel overflow-hidden">
+      <div className="sf-panel ">
         <div className="sf-panel-header">{t("admin.list")}</div>
         {isLoading ? (
           <FicsitPageLoader density="compact" className="min-h-56 border-0 bg-transparent" />

@@ -17,8 +17,8 @@ export function FicsitPageLoader({ variant = "embedded", density = "page", class
 
   const shell =
     variant === "fullscreen" ?
-      `relative flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-hidden sf-grid-bg ${className}`
-    : `relative flex w-full min-w-0 flex-col items-center justify-center overflow-hidden bg-transparent ${compact ? "min-h-44 py-6" : "min-h-[min(58dvh,520px)] py-10"} ${className}`;
+      `relative flex min-h-[100dvh] w-full flex-col items-center justify-center  sf-grid-bg ${className}`
+    : `relative flex w-full min-w-0 flex-col items-center justify-center  bg-transparent ${compact ? "min-h-44 py-6" : "min-h-[min(58dvh,520px)] py-10"} ${className}`;
 
   return (
     <div className={shell.trim()} role="status" aria-live="polite" aria-busy="true">

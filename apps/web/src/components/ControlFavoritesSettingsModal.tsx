@@ -73,7 +73,7 @@ function SettingsSection({
   return (
     <section
       className={
-        "overflow-hidden rounded-2xl border border-sf-border/40 bg-gradient-to-b from-[#161411] to-[#0c0b09] shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_12px_40px_rgba(0,0,0,0.35)] ring-1 ring-black/50 " +
+        " rounded-2xl border border-sf-border/40 bg-gradient-to-b from-[#161411] to-[#0c0b09] shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_12px_40px_rgba(0,0,0,0.35)] ring-1 ring-black/50 " +
         (sectionClassName ?? "")
       }
     >
@@ -240,7 +240,7 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
         role="dialog"
         aria-modal
         aria-labelledby="control-fav-settings-title"
-        className="relative z-10 flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden border-0 bg-[#100e0c] pt-[env(safe-area-inset-top,0px)] shadow-[0_0_0_1px_rgba(61,53,40,0.35)]"
+        className="relative z-10 flex h-[100dvh] max-h-[100dvh] w-full flex-col  border-0 bg-[#100e0c] pt-[env(safe-area-inset-top,0px)] shadow-[0_0_0_1px_rgba(61,53,40,0.35)]"
       >
         <header className="flex shrink-0 flex-col gap-3 border-b border-sf-border/45 bg-gradient-to-r from-sf-orange/[0.08] via-transparent to-sf-cyan/[0.05] px-4 py-3 sm:flex-row sm:items-start sm:justify-between sm:px-6 sm:py-4">
           <div className="min-w-0 flex-1">
@@ -257,8 +257,8 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
           </button>
         </header>
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(251,146,60,0.06),transparent_50%)] px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:px-6 lg:grid lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] lg:gap-8 lg:overflow-hidden lg:py-5">
-          <div className="flex min-h-0 min-w-0 flex-col gap-6 lg:h-full lg:min-h-0 lg:overflow-hidden lg:pr-1">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(251,146,60,0.06),transparent_50%)] px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:px-6 lg:grid lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] lg:gap-8 lg: lg:py-5">
+          <div className="flex min-h-0 min-w-0 flex-col gap-6 lg:h-full lg:min-h-0 lg: lg:pr-1">
               <SettingsSection thumbClass="Build_PriorityPowerSwitch_C" title={t("monitoring.powerFavoritesSwitches")}>
                 {swQ.isPending ?
                   <p className="py-6 text-center text-xs text-sf-muted">{t("common.loading")}</p>
@@ -371,7 +371,7 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
               thumbClass="Build_MinerMk2_C"
               title={t("control.favoritesBuildingGroups")}
               sectionClassName="min-h-0 lg:flex lg:h-full lg:min-h-0 lg:flex-col"
-              bodyClassName="flex min-h-0 flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden"
+              bodyClassName="flex min-h-0 flex-col lg:min-h-0 lg:flex-1 lg:"
               action={
                 <button type="button" className="sf-btn text-xs" onClick={startNewDraft} disabled={draft !== null}>
                   {t("control.favoritesGroupNew")}
@@ -425,7 +425,7 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
               )}
 
               {draft ?
-                <div className="mt-2 min-h-0 flex-1 overflow-hidden rounded-2xl border border-sf-orange/35 bg-gradient-to-b from-sf-orange/[0.09] via-[#12100e] to-[#0a0908] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ring-1 ring-sf-orange/15 lg:flex lg:min-h-0 lg:flex-col">
+                <div className="mt-2 min-h-0 flex-1  rounded-2xl border border-sf-orange/35 bg-gradient-to-b from-sf-orange/[0.09] via-[#12100e] to-[#0a0908] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ring-1 ring-sf-orange/15 lg:flex lg:min-h-0 lg:flex-col">
                   <div className="border-b border-sf-orange/25 bg-sf-orange/[0.06] px-4 py-3">
                     <p className="text-sm font-semibold text-sf-cream">
                       {draft.id ? t("control.favoritesGroupEditTitle") : t("control.favoritesGroupCreateTitle")}
@@ -434,7 +434,7 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
                       {draft.memberIds.length} {t("control.favoritesGroupMembersCount")} · {t("control.favoritesGroupMembers")}
                     </p>
                   </div>
-                  <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-4 lg:min-h-0">
+                  <div className="flex min-h-0 flex-1 flex-col gap-4  p-4 lg:min-h-0">
                     <label className="block shrink-0">
                       <span className="mb-1.5 block text-[0.65rem] font-medium uppercase tracking-wider text-sf-muted">
                         {t("control.favoritesGroupName")}
@@ -465,7 +465,7 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
                         </div>
                       : null}
                     </div>
-                    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+                    <div className="flex min-h-0 min-w-0 flex-1 flex-col ">
                       <p className="mb-2 shrink-0 text-[0.65rem] font-medium uppercase tracking-wider text-sf-muted">
                         {t("control.favoritesGroupMembers")}
                       </p>

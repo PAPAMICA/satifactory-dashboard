@@ -112,12 +112,12 @@ function PowerPageBody() {
           {!circuits.length ? (
             <p className="text-sm text-sf-muted">{t("monitoring.empty")}</p>
           ) : (
-            <section className="sf-panel flex min-w-0 flex-col overflow-hidden">
+            <section className="sf-panel flex min-w-0 flex-col ">
               <div className="sf-panel-header flex min-w-0 flex-wrap items-center gap-2 sm:gap-2">
                 <ItemThumb className="Build_GeneratorFuel_C" label="" size={28} />
                 <span className="min-w-0 truncate">{t("dashboard.powerTitle")}</span>
               </div>
-              <div className="flex min-h-[12rem] min-w-0 w-full flex-col overflow-hidden sm:min-h-[14rem]">
+              <div className="flex min-h-[12rem] min-w-0 w-full flex-col  sm:min-h-[14rem]">
                 <FrmPowerSummaryGrid circuits={circuits} variant="visual" />
               </div>
             </section>
@@ -126,7 +126,7 @@ function PowerPageBody() {
           {!me?.isPublicViewer ? <PowerFavoriteGroupsPanel /> : null}
 
           {me?.isAdmin ?
-            <section className="sf-panel min-w-0 overflow-hidden">
+            <section className="sf-panel min-w-0 ">
               <div className="sf-panel-header flex min-w-0 flex-wrap items-center gap-2 border-b border-sf-border/40 bg-gradient-to-r from-sf-cyan/10 to-transparent">
                 <ItemThumb className="Build_PriorityPowerSwitch_C" label="" size={28} />
                 <span className="min-w-0 truncate font-medium uppercase tracking-wider text-sf-cream">
@@ -139,14 +139,14 @@ function PowerPageBody() {
             </section>
           : null}
 
-          <section className="sf-panel flex min-w-0 flex-col overflow-hidden">
+          <section className="sf-panel flex min-w-0 flex-col ">
             <div className="sf-panel-header flex min-w-0 flex-wrap items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">
                 <ItemThumb className="Build_PowerStorageMk1_C" label="" size={28} />
                 <span className="min-w-0 truncate">{t("dashboard.chartTitle")}</span>
               </div>
             </div>
-            <div className="flex min-h-[min(32dvh,280px)] min-w-0 w-full flex-col overflow-hidden md:min-h-[min(38dvh,400px)]">
+            <div className="flex min-h-[min(32dvh,280px)] min-w-0 w-full flex-col  md:min-h-[min(38dvh,400px)]">
               <FrmPowerTrendPanel
                 variant="visual"
                 chartWindow={chartWindow}
@@ -157,7 +157,7 @@ function PowerPageBody() {
           </section>
 
           {circuits.length ?
-            <section className="sf-panel min-w-0 overflow-hidden p-3 sm:p-4">
+            <section className="sf-panel min-w-0  p-3 sm:p-4">
               <h2 className="mb-2 text-xs font-medium uppercase tracking-wider text-sf-muted">
                 {t("monitoring.powerCircuits")}
               </h2>
@@ -206,12 +206,12 @@ function PowerPageBody() {
             </section>
           : null}
 
-          <section className="sf-panel flex min-w-0 flex-col overflow-hidden">
+          <section className="sf-panel flex min-w-0 flex-col ">
             <div className="sf-panel-header flex min-w-0 flex-wrap items-center gap-2">
               <ItemThumb className="Build_GeneratorNuclear_C" label="" size={28} />
               <span className="min-w-0 truncate">{t("dashboard.widgets.generatorsCatalog")}</span>
             </div>
-            <div className="flex min-h-[14rem] min-w-0 w-full flex-col overflow-hidden sm:min-h-[16rem]">
+            <div className="flex min-h-[14rem] min-w-0 w-full flex-col  sm:min-h-[16rem]">
               {genQ.isError ? (
                 <p className="p-3 text-sm text-sf-orange">{(genQ.error as Error).message}</p>
               ) : genQ.isPending ? (
@@ -229,12 +229,12 @@ function PowerPageBody() {
             </div>
           </section>
 
-          <section className="sf-panel flex min-w-0 flex-col overflow-hidden">
+          <section className="sf-panel flex min-w-0 flex-col ">
             <div className="sf-panel-header flex min-w-0 flex-wrap items-center gap-2">
               <ItemThumb className="Build_PowerTower_C" label="" size={28} />
               <span className="min-w-0 truncate">{t("dashboard.widgets.powerUsageCatalog")}</span>
             </div>
-            <div className="flex min-h-[14rem] min-w-0 w-full flex-col overflow-hidden sm:min-h-[16rem]">
+            <div className="flex min-h-[14rem] min-w-0 w-full flex-col  sm:min-h-[16rem]">
               {usageQ.isError ? (
                 <p className="p-3 text-sm text-sf-orange">{(usageQ.error as Error).message}</p>
               ) : usageQ.isPending ? (
@@ -253,7 +253,7 @@ function PowerPageBody() {
         </>
       )}
 
-      <section className="sf-panel min-w-0 overflow-hidden p-3 sm:p-4">
+      <section className="sf-panel min-w-0  p-3 sm:p-4">
         <h2 className="mb-2 text-xs font-medium uppercase tracking-wider text-sf-muted">
           {t("monitoring.powerUsage")} ({usage.length})
         </h2>

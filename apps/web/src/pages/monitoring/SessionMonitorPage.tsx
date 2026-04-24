@@ -106,7 +106,7 @@ function SessionMonitorPageBody() {
         )}
       </div>
 
-      <div className="sf-panel min-w-0 overflow-hidden p-4">
+      <div className="sf-panel min-w-0  p-4">
         <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-sf-muted">
           {t("monitoring.sessionPlayers")} ({players.length})
         </h2>

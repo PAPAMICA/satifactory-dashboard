@@ -72,7 +72,7 @@ export function PowerFavoriteGroupsPanel() {
 
   if (!prefs.favoriteBuildingGroupIds.length) {
     return (
-      <section className="sf-panel min-w-0 overflow-hidden p-3 sm:p-4">
+      <section className="sf-panel min-w-0  p-3 sm:p-4">
         <div className="mb-2 flex items-center gap-2">
           <ItemThumb className="Build_ManufacturerMk1_C" label="" size={28} />
           <h2 className="text-xs font-medium uppercase tracking-wider text-sf-muted">
@@ -85,7 +85,7 @@ export function PowerFavoriteGroupsPanel() {
   }
 
   return (
-    <section className="sf-panel min-w-0 overflow-hidden p-3 sm:p-4">
+    <section className="sf-panel min-w-0  p-3 sm:p-4">
       <div className="mb-2 flex flex-wrap items-center gap-2">
         <ItemThumb className="Build_ManufacturerMk1_C" label="" size={28} />
         <h2 className="text-xs font-medium uppercase tracking-wider text-sf-muted">

@@ -188,7 +188,7 @@ export function FrmWorldMapCompact({
           </div>
         ) : null}
       </div>
-      <div ref={mapWrapRef} className="relative flex min-h-[min(32vh,240px)] min-w-0 flex-1 basis-0 flex-col overflow-hidden">
+      <div ref={mapWrapRef} className="relative flex min-h-[min(32vh,240px)] min-w-0 flex-1 basis-0 flex-col ">
         <FrmWorldMapDeck
           deckRef={deckRef}
           onDeckLoad={bumpProj}

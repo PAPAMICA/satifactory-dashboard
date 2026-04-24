@@ -52,7 +52,7 @@ function DronesPageBody() {
   }) => {
     const errMsg = error instanceof Error ? error.message : error ? String(error) : "";
     return (
-      <div className="sf-panel flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-3 sm:p-4">
+      <div className="sf-panel flex min-h-0 min-w-0 flex-1 flex-col  p-3 sm:p-4">
         <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-sf-muted">{title}</h2>
         {errMsg ? (
           <p className="text-sm text-sf-orange">{errMsg}</p>

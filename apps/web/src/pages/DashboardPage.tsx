@@ -637,7 +637,7 @@ export function DashboardPage() {
     const cardUl =
       "grid min-h-0 w-full min-w-0 flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(148px,1fr))] gap-2 overflow-y-auto overflow-x-hidden sm:gap-3 md:grid-cols-[repeat(auto-fill,minmax(168px,1fr))]";
     return (
-      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-2 sm:p-3">
+      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col  p-2 sm:p-3">
         {!favorites.length ? (
           <p className="text-sm text-sf-muted">{t("dashboard.noFavorites")}</p>
         ) : variant === "visual" ? (
@@ -1058,7 +1058,7 @@ export function DashboardPage() {
     }
     const rows = asFrmRowArray(mapMarkersQuery.data);
     return (
-      <div className="box-border flex h-full min-h-[min(52vh,320px)] w-full min-w-0 flex-1 flex-col overflow-hidden px-2 pb-2 pt-0 sm:px-3 sm:pb-3">
+      <div className="box-border flex h-full min-h-[min(52vh,320px)] w-full min-w-0 flex-1 flex-col  px-2 pb-2 pt-0 sm:px-3 sm:pb-3">
         <FrmWorldMapCompact markers={rows} scrollWheelZoom={false} className="min-h-0 min-w-0 flex-1 rounded-md border border-sf-border/40" />
         <p className="shrink-0 border-t border-sf-border/50 py-1.5 text-center text-[0.65rem] text-sf-muted">
           {t("dashboard.widgets.mapMarkersCount", { n: rows.length })}
@@ -1102,7 +1102,7 @@ export function DashboardPage() {
       );
     }
     return (
-      <div className="min-h-0 flex-1 overflow-hidden p-1.5 sm:p-3">
+      <div className="min-h-0 flex-1  p-1.5 sm:p-3">
         <ul className="h-full max-h-full space-y-1 overflow-y-auto sm:space-y-1.5">
           {rows.map((r, i) => {
             const idStr =
@@ -1212,7 +1212,7 @@ export function DashboardPage() {
       );
     }
     return (
-      <div className="min-h-0 flex-1 overflow-hidden p-1.5 sm:p-3">
+      <div className="min-h-0 flex-1  p-1.5 sm:p-3">
         <p className="mb-1.5 text-[0.6rem] text-sf-muted sm:mb-2 sm:text-[0.65rem]">
           {t("dashboard.widgets.factoryHint", {
             shown: formatIntegerSpaces(slice.length),
@@ -1365,7 +1365,7 @@ export function DashboardPage() {
         );
       case "fav":
         return (
-          <div className="box-border flex min-h-0 w-full min-w-0 flex-col overflow-hidden">
+          <div className="box-border flex min-h-0 w-full min-w-0 flex-col ">
             {renderFavorites(v, !isDesktop)}
           </div>
         );
@@ -1421,12 +1421,12 @@ export function DashboardPage() {
   ]);
 
   const renderPanel = (id: string, { drag }: { drag: boolean }) => (
-    <div key={id} className="sf-panel flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden">
+    <div key={id} className="sf-panel flex h-full min-h-0 w-full min-w-0 flex-col ">
       {widgetHeader(id, drag)}
       <div
         className={
           widgetBodyFlexIds.has(id)
-            ? "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+            ? "flex min-h-0 min-w-0 flex-1 flex-col "
             : "min-h-0 min-w-0 flex-1 overflow-auto"
         }
       >

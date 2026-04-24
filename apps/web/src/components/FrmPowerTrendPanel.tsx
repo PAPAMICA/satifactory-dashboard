@@ -285,7 +285,7 @@ export function FrmPowerTrendPanel({
   );
 
   return (
-    <div className="box-border flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden p-2 sm:p-3">
+    <div className="box-border flex h-full min-h-0 w-full min-w-0 flex-1 flex-col  p-2 sm:p-3">
       {disableHistory ?
         <p className="mb-2 shrink-0 rounded border border-sf-border/50 bg-black/25 px-2 py-1.5 text-[0.65rem] leading-snug text-sf-muted">
           {t("dashboard.publicNoPowerHistory")}

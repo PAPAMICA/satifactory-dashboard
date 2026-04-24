@@ -21,7 +21,7 @@ export function LinearFractionBar({
       aria-valuemin={0}
       aria-valuemax={100}
     >
-      <div className="h-1 w-full min-w-0 overflow-hidden rounded-full bg-black/45 ring-1 ring-sf-border/40">
+      <div className="h-1 w-full min-w-0  rounded-full bg-black/45 ring-1 ring-sf-border/40">
         <div
           className={`h-full rounded-full bg-gradient-to-r ${grad} transition-[width] duration-300`}
           style={{ width: `${pct}%` }}

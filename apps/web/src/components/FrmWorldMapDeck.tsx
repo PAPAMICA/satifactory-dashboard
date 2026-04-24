@@ -435,7 +435,7 @@ export function FrmWorldMapDeck({
   return (
     <div
       ref={wrapRef}
-      className={`relative min-h-[200px] h-full w-full min-w-0 flex-1 overflow-hidden bg-[#0a0c10] ${className}`}
+      className={`relative min-h-[200px] h-full w-full min-w-0 flex-1  bg-[#0a0c10] ${className}`}
     >
       {deckReady ? (
         <DeckGL

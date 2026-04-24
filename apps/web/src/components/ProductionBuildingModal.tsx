@@ -540,8 +540,8 @@ export function ProductionBuildingModal({ row, onClose, showMap = true, showAdmi
         aria-labelledby="production-building-modal-title"
         className={
           showMap ?
-            "flex h-[calc(100dvh-1.5rem)] max-h-[calc(100dvh-1.5rem)] w-full max-w-[min(1920px,calc(100vw-1rem))] flex-col overflow-hidden rounded-xl border border-sf-border/80 bg-[#14120f] shadow-2xl ring-1 ring-black/40 sm:h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-2rem)] sm:max-w-[min(1920px,calc(100vw-2rem))]"
-          : "mx-auto flex h-auto max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-sf-border/80 bg-[#14120f] shadow-2xl ring-1 ring-black/40 sm:max-h-[min(720px,calc(100dvh-2rem))]"
+            "flex h-[calc(100dvh-1.5rem)] max-h-[calc(100dvh-1.5rem)] w-full max-w-[min(1920px,calc(100vw-1rem))] flex-col  rounded-xl border border-sf-border/80 bg-[#14120f] shadow-2xl ring-1 ring-black/40 sm:h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-2rem)] sm:max-w-[min(1920px,calc(100vw-2rem))]"
+          : "mx-auto flex h-auto max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col  rounded-xl border border-sf-border/80 bg-[#14120f] shadow-2xl ring-1 ring-black/40 sm:max-h-[min(720px,calc(100dvh-2rem))]"
         }
         onMouseDown={(e) => e.stopPropagation()}
       >
@@ -570,7 +570,7 @@ export function ProductionBuildingModal({ row, onClose, showMap = true, showAdmi
         </div>
 
         <div
-          className={`flex min-h-0 flex-1 flex-col overflow-hidden ${showMap ? "lg:flex-row lg:items-stretch" : ""}`}
+          className={`flex min-h-0 flex-1 flex-col  ${showMap ? "lg:flex-row lg:items-stretch" : ""}`}
         >
           {bodyPanel}
           {showMap ?
@@ -579,7 +579,7 @@ export function ProductionBuildingModal({ row, onClose, showMap = true, showAdmi
                 {t("monitoring.productionModalMap")}
               </p>
               <div className="flex min-h-[min(220px,48vw)] flex-1 flex-col items-stretch lg:min-h-0">
-                <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-lg border border-sf-border/60 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)] aspect-[4/3] max-sm:max-h-[min(52dvh,420px)] lg:aspect-auto lg:max-h-none lg:min-h-[14rem]">
+                <div className="relative min-h-0 w-full flex-1  rounded-lg border border-sf-border/60 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)] aspect-[4/3] max-sm:max-h-[min(52dvh,420px)] lg:aspect-auto lg:max-h-none lg:min-h-[14rem]">
                   <FactoryLocationMap row={row} title={mapPopupTitle} fillParent className="h-full min-h-0 w-full rounded-lg border-0" />
                 </div>
               </div>

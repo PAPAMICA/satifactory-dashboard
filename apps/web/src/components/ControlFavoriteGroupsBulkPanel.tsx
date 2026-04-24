@@ -80,7 +80,7 @@ export function ControlFavoriteGroupsBulkPanel({ isAdmin }: { isAdmin: boolean }
 
   if (!prefs.favoriteBuildingGroupIds.length) {
     return (
-      <section className="sf-panel overflow-hidden">
+      <section className="sf-panel ">
         <div className="sf-panel-header flex flex-wrap items-center gap-2 border-b border-sf-border/50 bg-gradient-to-r from-sf-orange/10 to-transparent">
           <ItemThumb className="Build_ManufacturerMk1_C" label="" size={28} />
           <span className="min-w-0 truncate font-medium uppercase tracking-wider text-sf-cream">
@@ -93,7 +93,7 @@ export function ControlFavoriteGroupsBulkPanel({ isAdmin }: { isAdmin: boolean }
   }
 
   return (
-    <section className="sf-panel overflow-hidden">
+    <section className="sf-panel ">
       <div className="sf-panel-header flex flex-wrap items-center gap-2 border-b border-sf-border/50 bg-gradient-to-r from-sf-orange/10 to-transparent">
         <ItemThumb className="Build_ManufacturerMk1_C" label="" size={28} />
         <span className="min-w-0 truncate font-medium uppercase tracking-wider text-sf-cream">

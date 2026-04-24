@@ -47,7 +47,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-[100dvh] w-full min-w-0 items-center justify-center overflow-hidden px-3 py-8 sm:p-6">
+    <div className="relative flex min-h-[100dvh] w-full min-w-0 items-center justify-center  px-3 py-8 sm:p-6">
       <div className="sf-login-aurora pointer-events-none absolute inset-0" aria-hidden />
       <div className="sf-login-grid pointer-events-none absolute inset-0 opacity-[0.35]" aria-hidden />
 
@@ -68,7 +68,7 @@ export function LoginPage() {
           <p className="mt-1 text-xs uppercase tracking-[0.28em] text-sf-muted sm:text-sm">{t("login.brandLine")}</p>
         </div>
 
-        <div className="sf-login-rise sf-login-rise-delay-1 sf-login-card-glow sf-panel overflow-hidden shadow-2xl ring-1 ring-black/50">
+        <div className="sf-login-rise sf-login-rise-delay-1 sf-login-card-glow sf-panel  shadow-2xl ring-1 ring-black/50">
           <div className="sf-panel-header flex flex-wrap items-center justify-between gap-2">
             <span>{t("login.title")}</span>
             <div className="flex rounded border border-sf-border/60 bg-black/30 p-0.5 text-[0.65rem] uppercase tracking-wider">

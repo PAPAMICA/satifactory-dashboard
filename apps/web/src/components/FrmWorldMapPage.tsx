@@ -209,7 +209,7 @@ export function FrmWorldMapPage({
       <div className="order-1 flex min-h-[min(48vh,480px)] min-w-0 flex-1 basis-0 flex-col gap-2 lg:order-2">
         <div
           ref={mapWrapRef}
-          className="relative flex min-h-[280px] flex-1 basis-0 flex-col overflow-hidden rounded border border-sf-border/50 sm:min-h-[min(48vh,600px)]"
+          className="relative flex min-h-[280px] flex-1 basis-0 flex-col  rounded border border-sf-border/50 sm:min-h-[min(48vh,600px)]"
         >
           <FrmWorldMapDeck
             deckRef={deckRef}
