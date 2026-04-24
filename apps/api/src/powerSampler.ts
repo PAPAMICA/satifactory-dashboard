@@ -7,19 +7,22 @@ import { insertPowerSample } from "./powerTimeseries.js";
  * Échantillonne FRM sur l’intervalle lu à chaque cycle (poll_interval_ms),
  * indépendamment des clients — historique série temporelle fiable.
  */
-export function startPowerSampler(getIntervalMs: () => number, log: FastifyBaseLogger): () => void {
+export function startPowerSampler(
+  getIntervalMs: () => number | Promise<number>,
+  log: FastifyBaseLogger,
+): () => void {
   let timer: ReturnType<typeof setTimeout> | null = null;
   let busy = false;
   let stopped = false;
 
   const tick = async () => {
     if (stopped || busy) return;
-    if (!getFrmConfig()) return;
+    if (!(await getFrmConfig())) return;
     busy = true;
     try {
       const rows = await frmFetchJson<PowerCircuitRow[]>("/getPower");
       if (Array.isArray(rows) && rows.length) {
-        insertPowerSample(rows, Date.now());
+        await insertPowerSample(rows, Date.now());
       }
     } catch (e) {
       log.warn({ err: e }, "power sampler tick failed");
@@ -30,7 +33,7 @@ export function startPowerSampler(getIntervalMs: () => number, log: FastifyBaseL
 
   const loop = async () => {
     if (stopped) return;
-    const raw = getIntervalMs();
+    const raw = await Promise.resolve(getIntervalMs());
     const delay = Math.min(120_000, Math.max(2000, Number(raw) || 10_000));
     await tick();
     if (stopped) return;

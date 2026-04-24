@@ -1,14 +1,15 @@
 import { getKv } from "./db.js";
 
-export function getFrmConfig(): { baseUrl: string; token: string } | null {
-  const baseUrl = (getKv("frm_base_url") ?? "").trim().replace(/\/$/, "");
-  const token = (getKv("frm_token") ?? "").trim();
+export async function getFrmConfig(): Promise<{ baseUrl: string; token: string } | null> {
+  const [baseUrlRaw, tokenRaw] = await Promise.all([getKv("frm_base_url"), getKv("frm_token")]);
+  const baseUrl = (baseUrlRaw ?? "").trim().replace(/\/$/, "");
+  const token = (tokenRaw ?? "").trim();
   if (!baseUrl || !token) return null;
   return { baseUrl, token };
 }
 
 export async function frmFetchJson<T>(path: string): Promise<T> {
-  const cfg = getFrmConfig();
+  const cfg = await getFrmConfig();
   if (!cfg) {
     throw new Error("FRM not configured");
   }
@@ -26,7 +27,7 @@ export async function frmFetchJson<T>(path: string): Promise<T> {
 
 /** POST JSON vers FRM (endpoints Write documentés). */
 export async function frmPostJson<T>(path: string, body: unknown): Promise<T> {
-  const cfg = getFrmConfig();
+  const cfg = await getFrmConfig();
   if (!cfg) {
     throw new Error("FRM not configured");
   }

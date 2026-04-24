@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { getDb, getKv, type UserRow } from "./db.js";
+import { getPool, getKv, type UserRow } from "./db.js";
 
 /** Nom d’utilisateur Basic réservé pour l’accès consultation (mot de passe défini dans Paramètres). */
 export const PUBLIC_VIEWER_USERNAME = "public";
@@ -50,7 +50,7 @@ export async function authenticateRequest(
   }
 
   if (creds.username.toLowerCase() === PUBLIC_VIEWER_USERNAME.toLowerCase()) {
-    const hash = getKv(KV_PUBLIC_VIEWER_PASSWORD_HASH)?.trim();
+    const hash = (await getKv(KV_PUBLIC_VIEWER_PASSWORD_HASH))?.trim();
     if (!hash || !bcrypt.compareSync(creds.password, hash)) {
       return reply.code(401).send({ error: "Unauthorized" });
     }
@@ -63,9 +63,8 @@ export async function authenticateRequest(
     return;
   }
 
-  const row = getDb()
-    .prepare("SELECT * FROM users WHERE username = ?")
-    .get(creds.username) as UserRow | undefined;
+  const { rows } = await getPool().query<UserRow>("SELECT * FROM users WHERE username = $1", [creds.username]);
+  const row = rows[0];
 
   if (!row || !bcrypt.compareSync(creds.password, row.password_hash)) {
     return reply.code(401).send({ error: "Unauthorized" });

@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "concurrently -n api,web -c blue,magenta \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
     "build": "npm run build -w apps/web && npm run build -w apps/api",
-    "start": "NODE_OPTIONS=--experimental-sqlite npm run start -w apps/api"
+    "start": "npm run start -w apps/api"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

@@ -9,13 +9,32 @@
 #   traefik.http.services.sf.loadbalancer.server.port: 3000
 
 services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ficsit
+      POSTGRES_PASSWORD: ficsit
+      POSTGRES_DB: ficsit_control
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ficsit -d ficsit_control"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   app:
     build: .
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
       - "3000:3000"
     environment:
       PORT: "3000"
       HOST: "0.0.0.0"
+      DATABASE_URL: postgresql://ficsit:ficsit@db:5432/ficsit_control
       DATA_DIR: /data
       # Optionnel : premier compte admin si la base est vide
       INIT_ADMIN_USERNAME: ${INIT_ADMIN_USERNAME:-}
@@ -25,4 +44,5 @@ services:
     restart: unless-stopped
 
 volumes:
+  postgres-data:
   satifactory-data:

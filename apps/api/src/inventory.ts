@@ -1,4 +1,4 @@
-import { getDb } from "./db.js";
+import { getPool } from "./db.js";
 import { frmFetchJson } from "./frm.js";
 
 export type InvItem = {
@@ -55,9 +55,9 @@ export async function buildInventorySummary(): Promise<
     addItems(map, c.Inventory);
   }
 
-  const favRows = getDb()
-    .prepare("SELECT class_name FROM favorites")
-    .all() as { class_name: string }[];
+  const { rows: favRows } = await getPool().query<{ class_name: string }>(
+    "SELECT class_name FROM favorites",
+  );
   const fav = new Set(favRows.map((r) => r.class_name));
 
   return [...map.values()]

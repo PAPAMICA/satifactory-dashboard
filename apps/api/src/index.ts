@@ -5,7 +5,7 @@ import fastifyStatic from "@fastify/static";
 import Fastify from "fastify";
 import { authenticateRequest, denyIfPublicViewer, hashPassword, requireAdmin } from "./auth.js";
 import { bootstrapAdminFromEnv } from "./bootstrap.js";
-import { deleteKv, getDb, getKv, setKv } from "./db.js";
+import { closeDb, deleteKv, getKv, initDb, getPool, setKv } from "./db.js";
 import { getFrmConfig, frmFetchJson, frmPostJson } from "./frm.js";
 import {
   computeAllSinkRatesPerMinute,
@@ -28,12 +28,14 @@ await app.register(cors, {
   credentials: true,
 });
 
+await initDb();
+await bootstrapAdminFromEnv();
+
 app.get("/health", async () => ({ ok: true }));
 
 app.get("/api/init-status", async () => {
-  const count = (
-    getDb().prepare("SELECT COUNT(*) as c FROM users").get() as { c: number }
-  ).c;
+  const { rows } = await getPool().query<{ c: string }>("SELECT COUNT(*)::text AS c FROM users");
+  const count = Number(rows[0]?.c ?? "0");
   return { needsSetup: count === 0 };
 });
 
@@ -48,9 +50,9 @@ app.register(async (scope) => {
   }));
 
   scope.get("/api/settings", async (req) => {
-    const cfg = getFrmConfig();
-    const poll = Number(getKv("poll_interval_ms") ?? "10000") || 10000;
-    const pubConfigured = Boolean(getKv("public_viewer_password_hash")?.trim());
+    const cfg = await getFrmConfig();
+    const poll = Number((await getKv("poll_interval_ms")) ?? "10000") || 10000;
+    const pubConfigured = Boolean((await getKv("public_viewer_password_hash"))?.trim());
     if (req.user?.isPublicViewer) {
       return {
         frmBaseUrl: "",
@@ -81,7 +83,7 @@ app.register(async (scope) => {
     };
 
     if (body.clearPublicViewerPassword === true) {
-      deleteKv("public_viewer_password_hash");
+      await deleteKv("public_viewer_password_hash");
     } else if (typeof body.publicViewerPassword === "string" && body.publicViewerPassword.length > 0) {
       if (body.publicViewerPassword !== body.publicViewerPasswordConfirm) {
         return reply.code(400).send({ error: "Public viewer password confirmation mismatch" });
@@ -89,24 +91,24 @@ app.register(async (scope) => {
       if (body.publicViewerPassword.length < 4) {
         return reply.code(400).send({ error: "Public viewer password too short" });
       }
-      setKv("public_viewer_password_hash", hashPassword(body.publicViewerPassword));
+      await setKv("public_viewer_password_hash", hashPassword(body.publicViewerPassword));
     }
 
     if (typeof body.frmBaseUrl === "string") {
-      setKv("frm_base_url", body.frmBaseUrl.trim().replace(/\/$/, ""));
+      await setKv("frm_base_url", body.frmBaseUrl.trim().replace(/\/$/, ""));
     }
     if (typeof body.frmToken === "string" && body.frmToken.length > 0) {
-      setKv("frm_token", body.frmToken.trim());
+      await setKv("frm_token", body.frmToken.trim());
     }
     if (typeof body.pollIntervalMs === "number" && body.pollIntervalMs >= 2000) {
-      setKv("poll_interval_ms", String(Math.min(body.pollIntervalMs, 120_000)));
+      await setKv("poll_interval_ms", String(Math.min(body.pollIntervalMs, 120_000)));
     }
 
     return { ok: true };
   });
 
   scope.get("/api/dashboard/layout", async () => {
-    const raw = getKv("dashboard_layout");
+    const raw = await getKv("dashboard_layout");
     if (!raw) {
       return {
         layout: defaultLayout(),
@@ -129,7 +131,7 @@ app.register(async (scope) => {
     if (!body?.layout || !Array.isArray(body.layout)) {
       return reply.code(400).send({ error: "Invalid layout" });
     }
-    setKv(
+    await setKv(
       "dashboard_layout",
       JSON.stringify({
         layout: body.layout,
@@ -140,9 +142,9 @@ app.register(async (scope) => {
   });
 
   scope.get("/api/favorites", async () => {
-    const rows = getDb()
-      .prepare("SELECT class_name FROM favorites ORDER BY class_name")
-      .all() as { class_name: string }[];
+    const { rows } = await getPool().query<{ class_name: string }>(
+      "SELECT class_name FROM favorites ORDER BY class_name",
+    );
     return { favorites: rows.map((r) => r.class_name) };
   });
 
@@ -150,16 +152,17 @@ app.register(async (scope) => {
     if (denyIfPublicViewer(req, reply)) return;
     const className = decodeURIComponent((req.params as { className: string }).className);
     if (!className) return reply.code(400).send({ error: "Missing className" });
-    getDb()
-      .prepare("INSERT OR IGNORE INTO favorites (class_name) VALUES (?)")
-      .run(className);
+    await getPool().query(
+      "INSERT INTO favorites (class_name) VALUES ($1) ON CONFLICT (class_name) DO NOTHING",
+      [className],
+    );
     return { ok: true };
   });
 
   scope.delete("/api/favorites/:className", async (req, reply) => {
     if (denyIfPublicViewer(req, reply)) return;
     const className = decodeURIComponent((req.params as { className: string }).className);
-    getDb().prepare("DELETE FROM favorites WHERE class_name = ?").run(className);
+    await getPool().query("DELETE FROM favorites WHERE class_name = $1", [className]);
     return { ok: true };
   });
 
@@ -168,7 +171,7 @@ app.register(async (scope) => {
       const items = await buildInventorySummary();
       const ts = Date.now();
       try {
-        recordInventorySamples(
+        await recordInventorySamples(
           ts,
           items.map((i) => ({ className: i.className, amount: i.amount })),
         );
@@ -186,7 +189,7 @@ app.register(async (scope) => {
 
   scope.get("/api/inventory/rates", async (req, reply) => {
     try {
-      const rates = computeInventoryRatesPerMinute();
+      const rates = await computeInventoryRatesPerMinute();
       void reply.header("Cache-Control", "no-store");
       return { rates };
     } catch (e) {
@@ -197,7 +200,7 @@ app.register(async (scope) => {
 
   scope.get("/api/metrics/sink-rates", async (req, reply) => {
     try {
-      const rates = computeAllSinkRatesPerMinute();
+      const rates = await computeAllSinkRatesPerMinute();
       void reply.header("Cache-Control", "no-store");
       return { rates };
     } catch (e) {
@@ -209,7 +212,7 @@ app.register(async (scope) => {
   scope.get("/api/frm/:path", async (req, reply) => {
     const pathParam = (req.params as { path: string }).path;
     const sub = pathParam.startsWith("/") ? pathParam : `/${pathParam}`;
-    if (!getFrmConfig()) {
+    if (!(await getFrmConfig())) {
       return reply.code(400).send({ error: "FRM not configured" });
     }
     try {
@@ -217,9 +220,9 @@ app.register(async (scope) => {
       const ts = Date.now();
       try {
         if (sub === "/getResourceSink" || sub.endsWith("getResourceSink")) {
-          recordSinkSamples("resource", data, ts);
+          await recordSinkSamples("resource", data, ts);
         } else if (sub === "/getExplorationSink" || sub.endsWith("getExplorationSink")) {
-          recordSinkSamples("exploration", data, ts);
+          await recordSinkSamples("exploration", data, ts);
         }
       } catch (e) {
         req.log.warn({ err: e }, "sink scalar_samples record failed");
@@ -249,7 +252,7 @@ app.register(async (scope) => {
     if (!frmWritePaths.has(pathParam)) {
       return reply.code(403).send({ error: "FRM write path not allowed" });
     }
-    if (!getFrmConfig()) {
+    if (!(await getFrmConfig())) {
       return reply.code(400).send({ error: "FRM not configured" });
     }
     try {
@@ -264,7 +267,7 @@ app.register(async (scope) => {
     }
   });
 
-  /** Historique énergie (SQLite, série temporelle indexée par `ts_ms`). */
+  /** Historique énergie (PostgreSQL, série temporelle indexée par `ts_ms`). */
   scope.get("/api/metrics/power/history", async (req, reply) => {
     if (denyIfPublicViewer(req, reply)) return;
     const q = req.query as { hours?: string; minutes?: string; maxPoints?: string };
@@ -279,7 +282,7 @@ app.register(async (scope) => {
       const hours = Math.min(168, Math.max(1, Number(q.hours) || 24));
       sinceMs = Date.now() - hours * 3_600_000;
     }
-    const points = queryPowerHistorySince(sinceMs, maxPoints);
+    const points = await queryPowerHistorySince(sinceMs, maxPoints);
     void reply.header("Cache-Control", "no-store");
     return { points };
   });
@@ -287,9 +290,9 @@ app.register(async (scope) => {
   scope.get("/api/admin/users", async (req, reply) => {
     requireAdmin(req, reply);
     if (reply.sent) return;
-    const rows = getDb()
-      .prepare("SELECT id, username, is_admin FROM users ORDER BY id")
-      .all() as { id: number; username: string; is_admin: number }[];
+    const { rows } = await getPool().query<{ id: number; username: string; is_admin: number }>(
+      "SELECT id, username, is_admin FROM users ORDER BY id",
+    );
     return {
       users: rows.map((r) => ({
         id: r.id,
@@ -311,18 +314,18 @@ app.register(async (scope) => {
       return reply.code(400).send({ error: "username and password required" });
     }
     try {
-      getDb()
-        .prepare(
-          "INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, ?)",
-        )
-        .run(
-          body.username.trim(),
-          hashPassword(body.password),
-          body.isAdmin ? 1 : 0,
-        );
+      await getPool().query("INSERT INTO users (username, password_hash, is_admin) VALUES ($1, $2, $3)", [
+        body.username.trim(),
+        hashPassword(body.password),
+        body.isAdmin ? 1 : 0,
+      ]);
       return { ok: true };
-    } catch {
-      return reply.code(409).send({ error: "Username exists" });
+    } catch (e: unknown) {
+      const code = e && typeof e === "object" && "code" in e ? String((e as { code: string }).code) : "";
+      if (code === "23505") {
+        return reply.code(409).send({ error: "Username exists" });
+      }
+      throw e;
     }
   });
 
@@ -333,17 +336,15 @@ app.register(async (scope) => {
     if (!Number.isFinite(id) || id === req.user!.id) {
       return reply.code(400).send({ error: "Cannot delete self or invalid id" });
     }
-    getDb().prepare("DELETE FROM users WHERE id = ?").run(id);
+    await getPool().query("DELETE FROM users WHERE id = $1", [id]);
     return { ok: true };
   });
-
 });
 
 /** First-time setup without env: POST /api/setup { username, password } when no users */
 app.post("/api/setup", async (req, reply) => {
-  const count = (
-    getDb().prepare("SELECT COUNT(*) as c FROM users").get() as { c: number }
-  ).c;
+  const { rows } = await getPool().query<{ c: string }>("SELECT COUNT(*)::text AS c FROM users");
+  const count = Number(rows[0]?.c ?? "0");
   if (count > 0) {
     return reply.code(403).send({ error: "Already initialized" });
   }
@@ -351,11 +352,10 @@ app.post("/api/setup", async (req, reply) => {
   if (!body.username?.trim() || !body.password) {
     return reply.code(400).send({ error: "username and password required" });
   }
-  getDb()
-    .prepare(
-      "INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, 1)",
-    )
-    .run(body.username.trim(), hashPassword(body.password));
+  await getPool().query("INSERT INTO users (username, password_hash, is_admin) VALUES ($1, $2, 1)", [
+    body.username.trim(),
+    hashPassword(body.password),
+  ]);
   return { ok: true, username: body.username.trim() };
 });
 
@@ -391,15 +391,13 @@ if (isProd) {
 const port = Number(process.env.PORT ?? "3001");
 const host = process.env.HOST ?? "0.0.0.0";
 
-getDb();
-bootstrapAdminFromEnv();
-
 const stopPowerSampler = startPowerSampler(
-  () => Number(getKv("poll_interval_ms") ?? "10000") || 10_000,
+  async () => Number((await getKv("poll_interval_ms")) ?? "10000") || 10_000,
   app.log,
 );
 app.addHook("onClose", async () => {
   stopPowerSampler();
+  await closeDb();
 });
 
 try {

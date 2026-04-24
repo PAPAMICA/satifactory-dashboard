@@ -1,4 +1,4 @@
-import { getDb } from "./db.js";
+import { getPool } from "./db.js";
 
 export type PowerCircuitRow = {
   PowerProduction?: number;
@@ -41,21 +41,14 @@ export function aggregatePowerSample(rows: PowerCircuitRow[], tsMs: number): Pow
   };
 }
 
-export function insertPowerSample(rows: PowerCircuitRow[], tsMs = Date.now()): void {
+export async function insertPowerSample(rows: PowerCircuitRow[], tsMs = Date.now()): Promise<void> {
   const a = aggregatePowerSample(rows, tsMs);
-  const db = getDb();
-  db.prepare(
+  await getPool().query(
     `INSERT INTO power_ts (ts_ms, production, consumption, capacity, battery_avg, fuse_count)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-  ).run(
-    a.tsMs,
-    a.production,
-    a.consumption,
-    a.capacity,
-    a.batteryAvg,
-    a.fuseCount,
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [a.tsMs, a.production, a.consumption, a.capacity, a.batteryAvg, a.fuseCount],
   );
-  prunePowerSamples();
+  await prunePowerSamples();
 }
 
 function retentionMs(): number {
@@ -64,9 +57,9 @@ function retentionMs(): number {
   return d * 86_400_000;
 }
 
-function prunePowerSamples(): void {
+async function prunePowerSamples(): Promise<void> {
   const cutoff = Date.now() - retentionMs();
-  getDb().prepare("DELETE FROM power_ts WHERE ts_ms < ?").run(cutoff);
+  await getPool().query("DELETE FROM power_ts WHERE ts_ms < $1", [cutoff]);
 }
 
 export type PowerHistoryPoint = {
@@ -79,17 +72,16 @@ export type PowerHistoryPoint = {
 };
 
 /** Derniers échantillons chronologiques (pour courbe dashboard). */
-export function queryPowerHistorySince(sinceMs: number, maxPoints: number): PowerHistoryPoint[] {
+export async function queryPowerHistorySince(sinceMs: number, maxPoints: number): Promise<PowerHistoryPoint[]> {
   const cap = Math.min(Math.max(maxPoints, 10), 5000);
-  const rows = getDb()
-    .prepare(
-      `SELECT ts_ms AS tsMs, production, consumption, capacity,
-              battery_avg AS batteryAvg, fuse_count AS fuseCount
-       FROM power_ts
-       WHERE ts_ms >= ?
-       ORDER BY ts_ms ASC`,
-    )
-    .all(sinceMs) as PowerHistoryPoint[];
+  const { rows } = await getPool().query<PowerHistoryPoint>(
+    `SELECT ts_ms AS "tsMs", production, consumption, capacity,
+            battery_avg AS "batteryAvg", fuse_count AS "fuseCount"
+     FROM power_ts
+     WHERE ts_ms >= $1
+     ORDER BY ts_ms ASC`,
+    [sinceMs],
+  );
   if (rows.length <= cap) return rows;
   const stride = Math.ceil(rows.length / cap);
   const out: PowerHistoryPoint[] = [];
