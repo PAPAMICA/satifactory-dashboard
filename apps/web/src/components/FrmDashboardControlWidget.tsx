@@ -234,9 +234,9 @@ export function FrmDashboardControlWidget({ variant }: Props) {
   });
 
   const listUl =
-    "flex min-h-0 w-full min-w-0 flex-1 flex-col gap-1.5 overflow-y-auto overflow-x-hidden p-2 sm:p-3";
+    "flex min-h-0 w-full min-w-0 flex-col gap-1.5 overflow-y-auto overflow-x-hidden p-2 sm:p-3 max-md:max-h-[min(70vh,520px)] md:flex-1 md:max-h-none";
   const cardUl =
-    "grid min-h-0 w-full min-w-0 flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(118px,1fr))] gap-1.5 overflow-y-auto overflow-x-hidden p-1.5 sm:gap-2 sm:p-2 md:grid-cols-[repeat(auto-fill,minmax(128px,1fr))]";
+    "grid min-h-0 w-full min-w-0 auto-rows-min grid-cols-[repeat(auto-fill,minmax(118px,1fr))] gap-1.5 overflow-y-auto overflow-x-hidden p-1.5 sm:gap-2 sm:p-2 md:grid-cols-[repeat(auto-fill,minmax(128px,1fr))] max-md:max-h-[min(70vh,520px)] md:flex-1 md:max-h-none";
 
   const pctForMw = (mw: number) => (gridTotalMw > 1e-9 ? (mw / gridTotalMw) * 100 : null);
 
@@ -424,7 +424,7 @@ export function FrmDashboardControlWidget({ variant }: Props) {
 
   if (!cards.length) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-2 p-4 text-center">
+      <div className="flex flex-col items-center justify-center gap-2 p-4 text-center md:flex-1">
         <p className="text-xs text-sf-muted">{t("dashboard.widgets.controlEmptyFavorites")}</p>
         <p className="text-[0.65rem] text-sf-muted/80">{t("dashboard.widgets.controlEmptyFavoritesHint")}</p>
       </div>
@@ -435,7 +435,7 @@ export function FrmDashboardControlWidget({ variant }: Props) {
   const thumb = visual ? 34 : 22;
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col ">
+    <div className="flex min-h-0 w-full min-w-0 flex-col md:h-full md:flex-1">
       {visual ?
         <ul className={cardUl}>
           {cards.map((c) => {

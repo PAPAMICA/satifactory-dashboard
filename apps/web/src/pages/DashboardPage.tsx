@@ -1257,7 +1257,7 @@ export function DashboardPage() {
           className={`flex min-w-0 max-w-full flex-1 items-center gap-2 ${drag && editMode ? "drag-handle cursor-move" : ""}`}
         >
           {art ? <ItemThumb className={art} label="" size={28} /> : null}
-          <span className="min-w-0 flex-1 truncate">{title}</span>
+          <span className="min-w-0 flex-1 max-md:line-clamp-2 max-md:text-[0.68rem] max-md:leading-snug md:truncate">{title}</span>
         </div>
         {id === "chart" ? (
           <div
@@ -1420,20 +1420,23 @@ export function DashboardPage() {
     "ctrl",
   ]);
 
-  const renderPanel = (id: string, { drag }: { drag: boolean }) => (
-    <div key={id} className="sf-panel flex h-full min-h-0 w-full min-w-0 flex-col ">
-      {widgetHeader(id, drag)}
-      <div
-        className={
-          widgetBodyFlexIds.has(id)
-            ? "flex min-h-0 min-w-0 flex-1 flex-col "
-            : "min-h-0 min-w-0 flex-1 overflow-auto"
-        }
-      >
-        {renderWidgetBody(id)}
+  const renderPanel = (id: string, { drag }: { drag: boolean }) => {
+    /** Grille bureau : hauteur de cellule imposée. Mobile : flux naturel (évite chevauchement `h-full` + `flex-1`). */
+    const panelShell = drag ? "sf-panel flex h-full min-h-0 w-full min-w-0 flex-col" : "sf-panel flex w-full min-w-0 shrink-0 flex-col";
+    const bodyShell = drag ?
+      widgetBodyFlexIds.has(id) ?
+        "flex min-h-0 min-w-0 flex-1 flex-col"
+      : "min-h-0 min-w-0 flex-1 overflow-auto"
+    : widgetBodyFlexIds.has(id) ?
+      "flex w-full min-w-0 flex-col"
+    : "w-full min-w-0 overflow-x-auto";
+    return (
+      <div key={id} className={panelShell}>
+        {widgetHeader(id, drag)}
+        <div className={bodyShell}>{renderWidgetBody(id)}</div>
       </div>
-    </div>
-  );
+    );
+  };
 
   if (!layout) {
     return (
@@ -1531,7 +1534,7 @@ export function DashboardPage() {
           : null}
         </div>
       ) : !isDesktop ? (
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain">
+        <div className="flex w-full min-w-0 flex-col gap-4 pb-6">
           {layoutSorted.map((item) => renderPanel(item.i, { drag: false }))}
         </div>
       ) : (

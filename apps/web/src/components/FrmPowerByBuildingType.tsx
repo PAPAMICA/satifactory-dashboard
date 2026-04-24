@@ -184,7 +184,7 @@ export function FrmPowerByBuildingType({
 
   if (variant === "visual") {
     return (
-      <div className="grid min-h-0 flex-1 grid-cols-1 content-start items-start gap-2 overflow-auto p-2 sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] sm:gap-2.5 sm:p-2.5">
+      <div className="grid min-h-0 w-full grid-cols-1 content-start items-start gap-2 overflow-x-auto overflow-y-visible p-2 sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] sm:gap-2.5 sm:p-2.5 md:flex-1 md:overflow-auto">
         {summaries?.length ?
           <div className="col-span-full flex flex-wrap justify-center gap-3 sm:justify-start">
             {summaries.map((s, i) => (
@@ -242,7 +242,7 @@ export function FrmPowerByBuildingType({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-auto p-1.5 sm:gap-2 sm:p-3">
+    <div className="flex min-h-0 w-full flex-col gap-1.5 overflow-x-auto overflow-y-visible p-1.5 sm:gap-2 sm:p-3 md:flex-1 md:overflow-auto">
       {summaries?.length ?
         <div className="flex flex-wrap gap-2 text-[0.65rem] text-sf-muted sm:text-xs">
           {summaries.map((s, i) => (
@@ -253,7 +253,7 @@ export function FrmPowerByBuildingType({
           ))}
         </div>
       : null}
-      <ul className="min-h-0 flex-1 space-y-1 overflow-y-auto text-[0.65rem] sm:space-y-1.5 sm:text-xs">
+      <ul className="min-h-0 space-y-1 overflow-y-auto text-[0.65rem] sm:space-y-1.5 sm:text-xs md:flex-1">
         {top.map((row, i) => {
           const uc = rowThumbClass({ ClassName: row.className }, thumbFallback);
           const typeLabel = frmgClassLabel(uc, i18n.language);

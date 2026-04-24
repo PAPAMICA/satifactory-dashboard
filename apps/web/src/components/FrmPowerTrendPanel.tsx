@@ -168,7 +168,7 @@ export function FrmPowerTrendPanel({
       </div>
     );
     const chart = (
-      <div className="relative min-h-[min(38vh,280px)] w-full flex-1 basis-0 sm:min-h-[260px]">
+      <div className="relative w-full min-h-[220px] max-md:h-[min(42vh,300px)] md:min-h-[260px] md:flex-1 md:basis-0 md:min-h-0">
         {chartEmpty ? (
           <div className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center p-4 text-center text-sm leading-relaxed text-sf-muted">
             {t("dashboard.chartNoData")}
@@ -254,7 +254,7 @@ export function FrmPowerTrendPanel({
       </div>
     );
     return (
-      <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-2">
+      <div className="flex w-full min-w-0 flex-col gap-2 md:h-full md:min-h-0 md:flex-1">
         {variant === "visual" ? <div className="shrink-0">{summary}</div> : null}
         {chart}
       </div>
@@ -285,7 +285,7 @@ export function FrmPowerTrendPanel({
   );
 
   return (
-    <div className="box-border flex h-full min-h-0 w-full min-w-0 flex-1 flex-col  p-2 sm:p-3">
+    <div className="box-border flex w-full min-w-0 flex-col p-2 sm:p-3 md:h-full md:min-h-0 md:flex-1">
       {disableHistory ?
         <p className="mb-2 shrink-0 rounded border border-sf-border/50 bg-black/25 px-2 py-1.5 text-[0.65rem] leading-snug text-sf-muted">
           {t("dashboard.publicNoPowerHistory")}

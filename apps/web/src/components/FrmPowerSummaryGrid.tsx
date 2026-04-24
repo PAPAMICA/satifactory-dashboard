@@ -84,7 +84,7 @@ export function FrmPowerSummaryGrid({
   return (
     <div
       className={
-        "box-border flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-auto " +
+        "box-border flex w-full min-w-0 flex-col overflow-x-auto overflow-y-visible md:h-full md:min-h-0 md:flex-1 md:overflow-auto " +
         (variant === "visual" ? "p-3 sm:p-4" : "p-2 sm:p-3")
       }
     >
