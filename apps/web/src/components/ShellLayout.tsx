@@ -606,7 +606,7 @@ export function ShellLayout({
 
         <main
           className={
-            "relative flex min-h-0 w-full min-w-0 flex-1 flex-col px-2 pt-3 sm:px-4 sm:pt-4 sf-grid-bg " +
+            "relative flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden overscroll-y-contain px-2 pt-3 sm:px-4 sm:pt-4 sf-grid-bg " +
             "max-md:pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] md:pb-4"
           }
         >
@@ -618,7 +618,7 @@ export function ShellLayout({
               {t("nav.publicViewerBanner")}
             </div>
           : null}
-          <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">{children}</div>
+          <div className="flex w-full min-w-0 flex-col">{children}</div>
         </main>
       </div>
     </div>

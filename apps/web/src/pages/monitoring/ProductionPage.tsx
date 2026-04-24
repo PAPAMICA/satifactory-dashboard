@@ -162,7 +162,7 @@ function ProductionPageBody() {
   );
 
   return (
-    <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-4">
+    <div className="flex w-full min-w-0 flex flex-col gap-4">
       <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="sf-display text-lg font-semibold uppercase tracking-[0.12em] text-sf-orange sm:text-xl">
@@ -267,7 +267,7 @@ function ProductionPageBody() {
         </div>
       </div>
 
-      <div className="sf-panel flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-3 sm:p-4">
+      <div className="sf-panel flex min-w-0 flex-col overflow-hidden p-3 sm:p-4">
         {q.isError ?
           <p className="text-sm text-sf-orange">{(q.error as Error).message}</p>
         : q.isPending ?
@@ -275,7 +275,7 @@ function ProductionPageBody() {
         : !rows.length ?
           <p className="text-sm text-sf-muted">{t("monitoring.empty")}</p>
         : (
-          <div className="mx-auto grid min-h-0 w-full max-w-[min(100%,96rem)] flex-1 grid-cols-[repeat(auto-fill,minmax(10.75rem,1fr))] gap-x-2 gap-y-2.5 overflow-y-auto overscroll-contain px-0.5 sm:gap-x-2.5 sm:gap-y-3 sm:px-1">
+          <div className="mx-auto grid w-full max-w-[min(100%,96rem)] grid-cols-[repeat(auto-fill,minmax(10.75rem,1fr))] gap-x-2 gap-y-2.5 px-0.5 sm:gap-x-2.5 sm:gap-y-3 sm:px-1">
             {shown.map((vm, i) => {
               const r = vm.row;
               const thumbCls = factoryBuildingClassForThumb(r);

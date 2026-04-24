@@ -1365,13 +1365,13 @@ export function DashboardPage() {
         );
       case "fav":
         return (
-          <div className="box-border flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden">
+          <div className="box-border flex min-h-0 w-full min-w-0 flex-col overflow-hidden">
             {renderFavorites(v, !isDesktop)}
           </div>
         );
       case "session":
         return (
-          <div className="box-border flex h-full min-h-0 w-full flex-1 flex-col overflow-auto">
+          <div className="box-border flex min-h-0 w-full flex-col overflow-auto">
             {renderSession(v)}
           </div>
         );
@@ -1437,14 +1437,14 @@ export function DashboardPage() {
 
   if (!layout) {
     return (
-      <div className="flex min-h-0 flex-1 flex-col">
-        <FicsitPageLoader className="min-h-0 flex-1 border-0 bg-transparent" />
+      <div className="flex min-h-48 w-full flex-col">
+        <FicsitPageLoader className="min-h-48 border-0 bg-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-3 sm:gap-4">
+    <div className="flex w-full min-w-0 flex flex-col gap-3 sm:gap-4">
       <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-3">
         <div className="min-w-0">
           <h1 className="sf-display text-lg font-semibold uppercase tracking-[0.12em] text-sf-orange sm:text-xl sm:tracking-[0.15em]">

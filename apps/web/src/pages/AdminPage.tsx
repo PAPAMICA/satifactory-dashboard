@@ -54,7 +54,7 @@ export function AdminPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain sm:gap-6">
+    <div className="flex w-full min-w-0 flex flex-col gap-4 sm:gap-6">
       <h1 className="sf-display shrink-0 text-lg font-semibold uppercase tracking-[0.12em] text-sf-orange sm:text-xl sm:tracking-[0.15em]">
         {t("admin.title")}
       </h1>

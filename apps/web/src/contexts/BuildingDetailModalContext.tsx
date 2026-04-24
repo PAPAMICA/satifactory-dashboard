@@ -47,7 +47,7 @@ export function BuildingDetailModalProvider({ children }: { children: ReactNode 
 
   return (
     <BuildingDetailCtx.Provider value={value}>
-      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className="relative flex w-full min-w-0 flex-col">
         {children}
         {state ?
           <ProductionBuildingModal

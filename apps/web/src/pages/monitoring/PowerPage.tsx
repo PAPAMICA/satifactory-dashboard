@@ -91,7 +91,7 @@ function PowerPageBody() {
   );
 
   return (
-    <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col">
+    <div className="flex w-full min-w-0 flex flex-col">
       <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
         <h1 className="sf-display text-lg font-semibold uppercase tracking-[0.12em] text-sf-orange sm:text-xl">
           {t("monitoring.powerTitle")}
@@ -102,22 +102,22 @@ function PowerPageBody() {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain pr-0.5">
+      <div className="flex flex-col gap-4 pr-0.5">
       {powerQ.isError ? (
         <p className="text-sm text-sf-orange">{(powerQ.error as Error).message}</p>
       ) : powerQ.isPending ? (
-        <FicsitPageLoader className="min-h-0 flex-1 border-0 bg-transparent" />
+        <FicsitPageLoader className="min-h-40 border-0 bg-transparent" />
       ) : (
         <>
           {!circuits.length ? (
             <p className="text-sm text-sf-muted">{t("monitoring.empty")}</p>
           ) : (
-            <section className="sf-panel flex min-h-0 min-w-0 flex-col overflow-hidden">
+            <section className="sf-panel flex min-w-0 flex-col overflow-hidden">
               <div className="sf-panel-header flex min-w-0 flex-wrap items-center gap-2 sm:gap-2">
                 <ItemThumb className="Build_GeneratorFuel_C" label="" size={28} />
                 <span className="min-w-0 truncate">{t("dashboard.powerTitle")}</span>
               </div>
-              <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+              <div className="flex min-h-[12rem] min-w-0 w-full flex-col overflow-hidden sm:min-h-[14rem]">
                 <FrmPowerSummaryGrid circuits={circuits} variant="visual" />
               </div>
             </section>
@@ -139,14 +139,14 @@ function PowerPageBody() {
             </section>
           : null}
 
-          <section className="sf-panel flex min-h-0 min-w-0 flex-col overflow-hidden md:min-h-[min(36vh,380px)]">
+          <section className="sf-panel flex min-w-0 flex-col overflow-hidden">
             <div className="sf-panel-header flex min-w-0 flex-wrap items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">
                 <ItemThumb className="Build_PowerStorageMk1_C" label="" size={28} />
                 <span className="min-w-0 truncate">{t("dashboard.chartTitle")}</span>
               </div>
             </div>
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+            <div className="flex min-h-[min(32dvh,280px)] min-w-0 w-full flex-col overflow-hidden md:min-h-[min(38dvh,400px)]">
               <FrmPowerTrendPanel
                 variant="visual"
                 chartWindow={chartWindow}
@@ -206,12 +206,12 @@ function PowerPageBody() {
             </section>
           : null}
 
-          <section className="sf-panel flex min-h-0 min-w-0 flex-col overflow-hidden">
+          <section className="sf-panel flex min-w-0 flex-col overflow-hidden">
             <div className="sf-panel-header flex min-w-0 flex-wrap items-center gap-2">
               <ItemThumb className="Build_GeneratorNuclear_C" label="" size={28} />
               <span className="min-w-0 truncate">{t("dashboard.widgets.generatorsCatalog")}</span>
             </div>
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+            <div className="flex min-h-[14rem] min-w-0 w-full flex-col overflow-hidden sm:min-h-[16rem]">
               {genQ.isError ? (
                 <p className="p-3 text-sm text-sf-orange">{(genQ.error as Error).message}</p>
               ) : genQ.isPending ? (
@@ -229,12 +229,12 @@ function PowerPageBody() {
             </div>
           </section>
 
-          <section className="sf-panel flex min-h-0 min-w-0 flex-col overflow-hidden">
+          <section className="sf-panel flex min-w-0 flex-col overflow-hidden">
             <div className="sf-panel-header flex min-w-0 flex-wrap items-center gap-2">
               <ItemThumb className="Build_PowerTower_C" label="" size={28} />
               <span className="min-w-0 truncate">{t("dashboard.widgets.powerUsageCatalog")}</span>
             </div>
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+            <div className="flex min-h-[14rem] min-w-0 w-full flex-col overflow-hidden sm:min-h-[16rem]">
               {usageQ.isError ? (
                 <p className="p-3 text-sm text-sf-orange">{(usageQ.error as Error).message}</p>
               ) : usageQ.isPending ? (
