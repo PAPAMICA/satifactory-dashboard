@@ -1,3 +1,5 @@
+import { pngImageModules, webpImageModules } from "virtual:item-catalog-image-maps";
+
 /** Fusion déterministe de tous les JSON `traductions/<lang>/*.json`. */
 function mergeTranslationModules(
   modules: Record<string, Record<string, string>>
@@ -24,20 +26,22 @@ const labelsByLang = {
   fr: mergeTranslationModules(frModules),
 };
 
-/** URLs Vite pour chaque PNG sous `src/img/` (récursif ; clé = nom de fichier sans extension). */
-const imageModules = import.meta.glob<string>("../img/**/*.png", {
-  eager: true,
-  query: "?url",
-  import: "default",
-});
-
 const imageUrlByClassName = new Map<string, string>();
 
-for (const path of Object.keys(imageModules)) {
-  const file = path.split("/").pop() ?? "";
-  const className = file.replace(/\.png$/i, "");
-  if (className) {
-    imageUrlByClassName.set(className, imageModules[path] as string);
+function classNameFromImagePath(filePath: string, ext: "webp" | "png"): string | null {
+  const file = filePath.split("/").pop() ?? "";
+  const base = ext === "webp" ? file.replace(/\.webp$/i, "") : file.replace(/\.png$/i, "");
+  return base || null;
+}
+
+for (const p of Object.keys(webpImageModules)) {
+  const cn = classNameFromImagePath(p, "webp");
+  if (cn) imageUrlByClassName.set(cn, webpImageModules[p] as string);
+}
+for (const p of Object.keys(pngImageModules)) {
+  const cn = classNameFromImagePath(p, "png");
+  if (cn && !imageUrlByClassName.has(cn)) {
+    imageUrlByClassName.set(cn, pngImageModules[p] as string);
   }
 }
 

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { FrmSwitchesPanel } from "@/components/FrmSwitchesPanel";
 import { useTranslation } from "react-i18next";
 import { FicsitPageLoader } from "@/components/FicsitPageLoader";
@@ -27,6 +27,8 @@ import {
   sumCircuitField,
 } from "@/lib/monitoringFrm";
 import type { ChartTimeWindow } from "@/lib/powerHistoryChart";
+import { readEnergyControlPrefs, subscribeEnergyPrefs } from "@/lib/energyControlPrefs";
+import { frmBuildingRowSearchBlob } from "@/lib/productionFrm";
 
 function num(v: unknown): string {
   const n = Number(v);
@@ -44,6 +46,8 @@ function PowerPageBody() {
   const { t, i18n } = useTranslation();
   const refetchMs = useFrmRefetchMs();
   const [chartWindow, setChartWindow] = useState<ChartTimeWindow>("30m");
+  const [usageBuildingSearch, setUsageBuildingSearch] = useState("");
+  const energyPrefs = useSyncExternalStore(subscribeEnergyPrefs, readEnergyControlPrefs, readEnergyControlPrefs);
   const openBuildingDetail = useOpenBuildingDetail();
   const { data: me } = useQuery({
     queryKey: ["me"],
@@ -89,6 +93,17 @@ function PowerPageBody() {
     ],
     [t, generators.length, genTotalMw],
   );
+
+  const usageBuildingQ = usageBuildingSearch.trim().toLowerCase();
+  const usageDisplayed = useMemo(() => {
+    const cap = usage.slice(0, 200);
+    if (!usageBuildingQ) return cap;
+    return cap.filter((r) => {
+      const id = String(r.ID ?? r.id ?? "").trim();
+      const alias = (energyPrefs.buildingAliases[id] ?? "").toLowerCase();
+      return frmBuildingRowSearchBlob(r, i18n.language).includes(usageBuildingQ) || alias.includes(usageBuildingQ);
+    });
+  }, [usage, usageBuildingQ, i18n.language, energyPrefs.buildingAliases]);
 
   return (
     <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
@@ -253,10 +268,27 @@ function PowerPageBody() {
         </>
       )}
 
-      <section className="sf-panel min-w-0  p-3 sm:p-4">
-        <h2 className="mb-2 text-xs font-medium uppercase tracking-wider text-sf-muted">
-          {t("monitoring.powerUsage")} ({usage.length})
-        </h2>
+      <section className="sf-panel flex min-h-0 min-w-0 flex-col overflow-hidden p-3 sm:p-4">
+        <div className="mb-3 flex shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+          <h2 className="text-xs font-medium uppercase tracking-wider text-sf-muted">
+            <span>
+              {t("monitoring.powerUsage")} ({usage.length})
+            </span>
+            {usageBuildingQ ?
+              <span className="ml-1 font-normal normal-case text-sf-orange/90">· {usageDisplayed.length}</span>
+            : null}
+          </h2>
+          {!usageQ.isError && !usageQ.isPending && usage.length ?
+            <input
+              type="search"
+              value={usageBuildingSearch}
+              onChange={(e) => setUsageBuildingSearch(e.target.value)}
+              placeholder={t("monitoring.powerUsageByBuildingSearch")}
+              className="sf-input min-h-9 w-full min-w-0 max-w-md text-sm sm:w-72"
+              autoComplete="off"
+            />
+          : null}
+        </div>
         {usageQ.isError ? (
           <p className="text-sm text-sf-orange">{(usageQ.error as Error).message}</p>
         ) : usageQ.isPending ? (
@@ -264,59 +296,52 @@ function PowerPageBody() {
         ) : !usage.length ? (
           <p className="text-sm text-sf-muted">{t("monitoring.empty")}</p>
         ) : (
-          <div className="min-h-0 overflow-auto">
-            <table className="w-full border-collapse text-left text-xs">
-              <thead className="sticky top-0 bg-[#14120f] text-sf-muted">
-                <tr>
-                  <th className="border-b border-sf-border p-2 font-normal w-10" aria-hidden />
-                  <th className="border-b border-sf-border p-2 font-normal">{t("monitoring.colBuildingType")}</th>
-                  <th className="border-b border-sf-border p-2 font-normal">MW</th>
-                  <th className="border-b border-sf-border p-2 font-normal min-w-[120px]">
-                    {t("monitoring.powerLoadShare")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {usage.slice(0, 200).map((r, i) => {
-                  const pi = r.PowerInfo as Record<string, unknown> | undefined;
-                  const mw = pi?.PowerConsumed ?? pi?.powerConsumed ?? r.PowerConsumed;
-                  const rawClass = String(r.ClassName ?? r.className ?? "").trim();
-                  const thumbClass = rowThumbClass(r, "Build_OilRefinery_C");
-                  const normClass = rawClass ? normalizeBuildClassName(rawClass) : normalizeBuildClassName(thumbClass);
-                  const imgClass = normClass !== "—" ? normClass : thumbClass;
-                  const typeLabel = frmgClassLabel(imgClass, i18n.language);
-                  const mwN = Number(mw) || 0;
-                  const share =
-                    totals.cons > 0 && mwN > 0 ? Math.min(1, mwN / totals.cons) : 0;
-                  return (
-                    <tr
-                      key={String(r.ID ?? r.id ?? i)}
-                      className="cursor-pointer border-b border-sf-border/40 transition-colors hover:bg-white/[0.04]"
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          openBuildingDetail(r, { showMap: true, showAdminControls: Boolean(me?.isAdmin) });
-                        }
-                      }}
-                      onClick={() => openBuildingDetail(r, { showMap: true, showAdminControls: Boolean(me?.isAdmin) })}
-                    >
-                      <td className="p-2 align-middle">
-                        <ItemThumb className={imgClass} label={typeLabel} size={28} />
-                      </td>
-                      <td className="p-2 align-middle text-sf-cream">{typeLabel}</td>
-                      <td className="p-2 align-middle font-mono text-sf-orange">{num(mw)}</td>
-                      <td className="p-2 align-middle">
-                        <div className="max-w-[200px]">
-                          <LinearFractionBar fraction={share} />
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="min-h-0 flex-1 overflow-auto pr-0.5">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] sm:gap-2.5">
+              {usageDisplayed.map((r, i) => {
+                const pi = r.PowerInfo as Record<string, unknown> | undefined;
+                const mw = pi?.PowerConsumed ?? pi?.powerConsumed ?? r.PowerConsumed;
+                const rawClass = String(r.ClassName ?? r.className ?? "").trim();
+                const thumbClass = rowThumbClass(r, "Build_OilRefinery_C");
+                const normClass = rawClass ? normalizeBuildClassName(rawClass) : normalizeBuildClassName(thumbClass);
+                const imgClass = normClass !== "—" ? normClass : thumbClass;
+                const typeLabel = frmgClassLabel(imgClass, i18n.language);
+                const mwN = Number(mw) || 0;
+                const share = totals.cons > 0 && mwN > 0 ? Math.min(1, mwN / totals.cons) : 0;
+                const bid = String(r.ID ?? r.id ?? "").trim();
+                const alias = bid ? (energyPrefs.buildingAliases[bid] ?? "").trim() : "";
+                return (
+                  <button
+                    key={String(r.ID ?? r.id ?? i)}
+                    type="button"
+                    className="flex w-full min-w-0 flex-col gap-2 rounded-lg border border-sf-border/70 bg-black/20 p-2.5 text-left shadow-sm ring-1 ring-white/[0.03] transition-colors hover:border-sf-orange/35 hover:bg-black/30 sm:p-3"
+                    onClick={() => openBuildingDetail(r, { showMap: true, showAdminControls: Boolean(me?.isAdmin) })}
+                  >
+                    <div className="flex items-start gap-2">
+                      <ItemThumb className={imgClass} label={typeLabel} size={36} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-sf-cream">{typeLabel}</p>
+                        {alias ?
+                          <p className="mt-0.5 truncate text-[0.65rem] text-sf-muted" title={alias}>
+                            {alias}
+                          </p>
+                        : null}
+                        <p className="mt-1 font-mono text-xs text-sf-orange">{num(mw)} MW</p>
+                      </div>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="mb-1 text-[0.6rem] uppercase tracking-wider text-sf-muted">
+                        {t("monitoring.powerLoadShare")}
+                      </p>
+                      <LinearFractionBar fraction={share} />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            {!usageDisplayed.length && usageBuildingQ ?
+              <p className="mt-3 text-sm text-sf-muted">{t("monitoring.empty")}</p>
+            : null}
           </div>
         )}
       </section>

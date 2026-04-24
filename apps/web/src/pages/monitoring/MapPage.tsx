@@ -24,26 +24,27 @@ function MapPageBody() {
   const rows = asFrmRowArray(q.data);
 
   return (
-    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-3 sm:gap-4">
-      <div className="shrink-0">
-        <h1 className="sf-display text-lg font-semibold uppercase tracking-[0.12em] text-sf-orange sm:text-xl">
-          {t("monitoring.mapTitle")}
-        </h1>
-        <p className="mt-1 text-xs text-sf-muted sm:text-sm">{t("monitoring.mapHint")}</p>
-      </div>
-      <div className="sf-panel flex min-h-0 flex-1 flex-col  p-3 sm:p-4">
-        {q.isError ? (
-          <p className="text-sm text-sf-orange">{(q.error as Error).message}</p>
-        ) : q.isPending ? (
-          <FicsitPageLoader className="min-h-0 flex-1 border-0 bg-transparent" />
-        ) : (
-          <FrmWorldMapPage
-            markers={rows}
-            scrollWheelZoom
-            isAdmin={Boolean(me?.isAdmin)}
-            className="min-h-0 flex-1"
-          />
-        )}
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
+      <div className="sf-panel flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="sf-panel-header flex flex-wrap items-center justify-between gap-2 py-2">
+          <h1 className="sf-display text-base font-semibold uppercase tracking-[0.12em] sm:text-lg">
+            {t("monitoring.mapTitle")}
+          </h1>
+        </div>
+        <div className="flex min-h-0 flex-1 flex-col p-2 sm:p-3">
+          {q.isError ? (
+            <p className="text-sm text-sf-orange">{(q.error as Error).message}</p>
+          ) : q.isPending ? (
+            <FicsitPageLoader className="min-h-0 flex-1 border-0 bg-transparent" />
+          ) : (
+            <FrmWorldMapPage
+              markers={rows}
+              scrollWheelZoom
+              isAdmin={Boolean(me?.isAdmin)}
+              className="min-h-0 flex-1"
+            />
+          )}
+        </div>
       </div>
     </div>
   );

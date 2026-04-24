@@ -16,23 +16,42 @@ function MiniMwSparkline({
   values,
   title,
   compact,
+  showAxes = true,
 }: {
   values: number[];
   title?: string;
   /** Liste compacte : pas de marge haute, hauteur pilotée par le parent. */
   compact?: boolean;
+  /** Axes L / bas (repères visuels pour la courbe MW). */
+  showAxes?: boolean;
 }) {
   const w = 120;
-  const h = 26;
-  const marginCls = compact ? "mt-0 h-full max-h-[26px]" : "mt-1.5 h-[26px]";
+  const h = compact ? 22 : 26;
+  const padL = showAxes ? 11 : 0;
+  const padB = showAxes ? 5 : 2;
+  const plotW = Math.max(1, w - padL - 2);
+  const plotH = Math.max(1, h - padB - 2);
+  const x0 = padL;
+  const y0 = 1;
+  const yAxisBottom = h - padB;
+  const marginCls = compact ? "mt-0 h-full max-h-[22px]" : "mt-1 h-[26px]";
+  const axisStroke = "#4a4235";
   if (values.length < 2) {
     return (
-      <div
-        title={title}
-        className={`${marginCls} w-full min-w-0 rounded bg-black/25 ring-1 ring-sf-border/30`}
+      <svg
+        className={`${marginCls} w-full min-w-0 rounded bg-black/25 text-sf-orange ring-1 ring-sf-border/30`}
+        viewBox={`0 0 ${w} ${h}`}
+        preserveAspectRatio="none"
         role="img"
-        aria-hidden
-      />
+        aria-label={title}
+      >
+        {showAxes ?
+          <>
+            <line x1={x0} y1={yAxisBottom} x2={w} y2={yAxisBottom} stroke={axisStroke} strokeWidth="0.75" />
+            <line x1={x0} y1={y0} x2={x0} y2={yAxisBottom} stroke={axisStroke} strokeWidth="0.75" />
+          </>
+        : null}
+      </svg>
     );
   }
   const min = Math.min(...values);
@@ -44,8 +63,9 @@ function MiniMwSparkline({
   const range = hi - lo || 1;
   const pts = values
     .map((v, i) => {
-      const x = values.length === 1 ? w / 2 : (i / (values.length - 1)) * w;
-      const y = h - 2 - ((Number(v) - lo) / range) * (h - 4);
+      const x =
+        values.length === 1 ? x0 + plotW / 2 : x0 + (i / (values.length - 1)) * plotW;
+      const y = y0 + plotH - 2 - ((Number(v) - lo) / range) * (plotH - 4);
       return `${x},${y}`;
     })
     .join(" ");
@@ -57,6 +77,14 @@ function MiniMwSparkline({
       role="img"
       aria-label={title}
     >
+      {showAxes ?
+        <>
+          <line x1={x0} y1={yAxisBottom} x2={w} y2={yAxisBottom} stroke={axisStroke} strokeWidth="0.75" />
+          <line x1={x0} y1={y0} x2={x0} y2={yAxisBottom} stroke={axisStroke} strokeWidth="0.75" />
+          <line x1={w} y1={yAxisBottom - 3} x2={w} y2={yAxisBottom} stroke={axisStroke} strokeWidth="0.6" />
+          <line x1={x0} y1={y0} x2={x0 + 3} y2={y0} stroke={axisStroke} strokeWidth="0.6" />
+        </>
+      : null}
       <polyline
         fill="none"
         stroke="currentColor"
@@ -117,7 +145,7 @@ export function FrmPowerByBuildingType({
 
   if (variant === "visual") {
     return (
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-2 overflow-auto p-2 sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] sm:p-3">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-1.5 overflow-auto p-2 sm:grid-cols-[repeat(auto-fill,minmax(188px,1fr))] sm:gap-2 sm:p-2.5">
         {summaries?.length ?
           <div className="col-span-full flex flex-wrap justify-center gap-3 sm:justify-start">
             {summaries.map((s, i) => (
@@ -138,10 +166,10 @@ export function FrmPowerByBuildingType({
           return (
             <div
               key={`${row.className}-${i}`}
-              className="rounded-lg border border-sf-border/70 bg-black/20 p-2 shadow-sm ring-1 ring-white/[0.03]"
+              className="rounded-lg border border-sf-border/70 bg-black/20 p-1.5 shadow-sm ring-1 ring-white/[0.03] sm:p-2"
             >
-              <div className="flex items-start gap-2">
-                <ItemThumb className={uc} label="" size={44} />
+              <div className="flex items-start gap-1.5 sm:gap-2">
+                <ItemThumb className={uc} label="" size={32} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
                     <p className="min-w-0 truncate text-sm font-medium text-sf-cream">{typeLabel}</p>
@@ -150,13 +178,14 @@ export function FrmPowerByBuildingType({
                   <p className="mt-0.5 truncate text-[0.65rem] text-sf-muted" title={row.className}>
                     {t("dashboard.widgets.powerByTypeCount", { count: row.count })}
                   </p>
-                  <div className="mt-2">
+                  <div className="mt-1">
                     <LinearFractionBar fraction={frac} kind={kind} />
                   </div>
                   {historyEnabled ?
                     <MiniMwSparkline
                       values={getSeries(row.className)}
                       title={t("dashboard.widgets.powerByTypeSparkAria")}
+                      showAxes
                     />
                   : null}
                 </div>
@@ -198,11 +227,12 @@ export function FrmPowerByBuildingType({
                 <p className="mt-0.5 font-mono text-[0.65rem] text-sf-orange">{fmtMw(row.mw)}</p>
               </div>
               {historyEnabled ?
-                <div className="flex h-[26px] w-[88px] shrink-0 items-center self-center">
+                <div className="flex h-[22px] w-[88px] shrink-0 items-center self-center">
                   <MiniMwSparkline
                     values={getSeries(row.className)}
                     title={t("dashboard.widgets.powerByTypeSparkAria")}
                     compact
+                    showAxes={false}
                   />
                 </div>
               : null}

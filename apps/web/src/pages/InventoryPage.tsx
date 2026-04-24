@@ -276,7 +276,7 @@ export function InventoryPage() {
         </div>
       </div>
 
-      <div className="sf-panel flex min-h-0 flex-1 flex-col ">
+      <div className="sf-panel flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="sf-panel-header flex shrink-0 flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-4">
           <span className="text-[0.65rem] uppercase tracking-wide text-sf-muted">{t("inventory.listTitle")}</span>
           <span className="font-mono text-[0.7rem] text-sf-muted">
@@ -307,7 +307,7 @@ export function InventoryPage() {
           </span>
         </div>
 
-        <ul className="flex min-h-0 flex-1 flex-col">
+        <ul className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           {filtered.map((row) => rowCard(row))}
         </ul>
       </div>

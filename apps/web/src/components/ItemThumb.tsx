@@ -1,29 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 import { itemImageUrl } from "@/lib/itemCatalog";
 
-/** Logo FICSIT de repli (pas d’asset PNG requis). */
+/** Mascotte FICSIT de repli lorsque l’icône catalogue est absente ou en erreur. */
 function FicsitFallbackMark({ size, title }: { size: number; title: string }) {
   return (
     <div
-      className="flex shrink-0 items-center justify-center rounded border border-sf-border bg-gradient-to-br from-black/55 to-black/35 text-sf-orange ring-1 ring-white/[0.06]"
+      className="flex shrink-0 items-center justify-center overflow-hidden rounded border border-sf-border bg-gradient-to-br from-black/55 to-black/35 ring-1 ring-white/[0.06]"
       style={{ width: size, height: size }}
       title={title}
       role="img"
       aria-label="FICSIT"
     >
-      <svg
-        className="h-[58%] w-[58%] shrink-0"
-        viewBox="0 0 24 24"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-hidden
-      >
-        <path
-          fill="currentColor"
-          d="M5 4h14v2.6H9.2v3.4H17V12H9.2v8H5V4z"
-          opacity="0.95"
-        />
-      </svg>
+      <img
+        src="/ficsit.png"
+        alt=""
+        className="h-[78%] w-[78%] shrink-0 object-contain object-center"
+        draggable={false}
+      />
     </div>
   );
 }

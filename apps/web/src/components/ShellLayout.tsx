@@ -172,13 +172,14 @@ function LangToggle({
   const isEn = !isFr;
   const inner = flagsOnly ? "flex items-center justify-center" : compact ? "flex flex-col items-center gap-0" : "flex flex-row items-center gap-1";
   const seg = flagsOnly ?
-      "flex size-9 shrink-0 items-center justify-center rounded-md text-lg leading-none transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-sf-orange "
+      "flex size-9 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-sf-orange "
     : "flex flex-1 items-center justify-center rounded-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-sf-orange " +
       (compact ? "min-h-[2.35rem] px-0.5 py-0.5" : "min-h-[2.25rem] px-2 py-1.5");
   const on = "bg-sf-orange/20 text-sf-orange ring-1 ring-sf-orange/40";
   const off = "text-sf-muted ring-1 ring-transparent hover:bg-white/5 hover:text-sf-text";
-  const lbl = "text-[0.58rem] font-bold uppercase tracking-[0.1em]";
-  const flag = flagsOnly ? "text-[1.15rem] leading-none" : compact ? "text-[0.95rem] leading-none" : "text-[1.05rem] leading-none";
+  const flagImg =
+    "h-4 w-[1.45rem] shrink-0 rounded-[2px] border border-black/25 object-cover shadow-sm " +
+    (compact && !flagsOnly ? "sm:h-3.5 sm:w-[1.25rem]" : "");
   return (
     <div
       className={
@@ -198,10 +199,7 @@ function LangToggle({
         aria-pressed={isEn}
         aria-label={t("nav.langEnglish")}
       >
-        <span className={flag} aria-hidden>
-          🇬🇧
-        </span>
-        {!flagsOnly ? <span className={lbl}>EN</span> : null}
+        <img src="/flags/gb.svg" alt="" className={flagImg} width={23} height={16} aria-hidden />
       </button>
       <button
         type="button"
@@ -210,10 +208,7 @@ function LangToggle({
         aria-pressed={isFr}
         aria-label={t("nav.langFrench")}
       >
-        <span className={flag} aria-hidden>
-          🇫🇷
-        </span>
-        {!flagsOnly ? <span className={lbl}>FR</span> : null}
+        <img src="/flags/fr.svg" alt="" className={flagImg} width={23} height={16} aria-hidden />
       </button>
     </div>
   );

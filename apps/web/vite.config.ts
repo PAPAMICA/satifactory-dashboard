@@ -3,10 +3,16 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
   resolve: {
-    alias: { "@": path.resolve(__dirname, "src") },
+    alias: {
+      "@": path.resolve(__dirname, "src"),
+      "virtual:item-catalog-image-maps": path.resolve(
+        __dirname,
+        mode === "production" ? "src/lib/itemCatalogImageMaps.prod.ts" : "src/lib/itemCatalogImageMaps.dev.ts",
+      ),
+    },
   },
   server: {
     proxy: {
@@ -17,4 +23,4 @@ export default defineConfig({
     outDir: "dist",
     emptyOutDir: true,
   },
-});
+}));

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -15,6 +15,7 @@ import { generatorMwLive, normalizeBuildClassName } from "@/lib/monitoringFrm";
 import { rowSupportsSetEnabled } from "@/lib/frmBuildingPowerPolicy";
 import { itemLabel } from "@/lib/itemCatalog";
 import { apiFetch } from "@/lib/api";
+import { readEnergyControlPrefs, setBuildingAlias, subscribeEnergyPrefs } from "@/lib/energyControlPrefs";
 import { asFrmRowArray } from "@/lib/frmRows";
 import {
   factoryBuildingClassForThumb,
@@ -273,6 +274,12 @@ export function ProductionBuildingModal({ row, onClose, showMap = true, showAdmi
   const { primary } = factoryBuildingPrimarySecondary(row, i18n.language);
   const mapPopupTitle = primary;
   const buildingId = String(row.ID ?? row.Id ?? "").trim();
+  const energyPrefs = useSyncExternalStore(subscribeEnergyPrefs, readEnergyControlPrefs, readEnergyControlPrefs);
+  const storedBuildingAlias = buildingId ? (energyPrefs.buildingAliases[buildingId] ?? "") : "";
+  const [aliasDraft, setAliasDraft] = useState(storedBuildingAlias);
+  useEffect(() => {
+    setAliasDraft(storedBuildingAlias);
+  }, [storedBuildingAlias, buildingId]);
 
   const prodLines = factoryProductionLines(row);
   const ingLines = factoryIngredientLines(row);
@@ -558,6 +565,22 @@ export function ProductionBuildingModal({ row, onClose, showMap = true, showAdmi
                 </h2>
                 {!isGenerator ? <EfficiencyCapsule pct={effPct} /> : null}
               </div>
+              {buildingId ?
+                <label className="mt-2 block max-w-md">
+                  <span className="mb-1 block text-[0.62rem] font-medium uppercase tracking-wider text-sf-muted">
+                    {t("monitoring.buildingModalAlias")}
+                  </span>
+                  <input
+                    type="text"
+                    className="sf-input w-full text-xs"
+                    value={aliasDraft}
+                    onChange={(e) => setAliasDraft(e.target.value)}
+                    onBlur={() => setBuildingAlias(buildingId, aliasDraft.trim())}
+                    placeholder={t("monitoring.powerAliasPlaceholder")}
+                    autoComplete="off"
+                  />
+                </label>
+              : null}
             </div>
           </div>
           <button

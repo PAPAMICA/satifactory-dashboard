@@ -2,6 +2,7 @@ import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { DeckGLRef } from "@deck.gl/react";
 import { ItemThumb } from "@/components/ItemThumb";
+import { IconLayers, IconSearch } from "@/components/InventoryIcons";
 import {
   FrmWorldMapDeck,
   markerDetailForPopup,
@@ -116,100 +117,142 @@ export function FrmWorldMapPage({
     setLayerVis((v) => ({ ...v, [k]: !v[k] }));
   };
 
-  const markerTypePicker = (
-    <div className="rounded border border-sf-border/60 bg-black/20 p-2">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="text-[0.65rem] uppercase tracking-wider text-sf-muted">{t("monitoring.mapMarkerTypes")}</span>
-        <button type="button" className="text-[0.65rem] text-sf-cyan hover:underline" onClick={showAllTypes}>
-          {t("monitoring.mapResetFilters")}
-        </button>
-      </div>
-      <div className="max-h-36 overflow-y-auto sm:max-h-52">
-        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {typesPresent.map((typ) => {
-            const thumb = thumbClassForMapMarker({ MapMarkerType: typ });
-            const on = !hiddenTypes.has(typ);
-            return (
-              <li key={typ}>
-                <button
-                  type="button"
-                  onClick={() => toggleType(typ)}
-                  className={`flex w-full flex-col items-center gap-1 rounded border p-2 text-center transition-colors ${
-                    on ? "border-sf-border-bright bg-black/30" : "border-sf-border/40 opacity-50"
-                  }`}
-                >
-                  <ItemThumb className={thumb} label="" size={32} />
-                  <span className="font-mono text-[0.6rem] leading-tight text-sf-cream">{typ.replace(/^RT_/, "")}</span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-    </div>
-  );
-
-  const infraLayerToggles = (
-    <div className="space-y-2 rounded border border-sf-border/60 bg-black/20 p-2">
-      <p className="text-[0.65rem] uppercase tracking-wider text-sf-muted">{t("monitoring.mapInfraLayersTitle")}</p>
-      <ul className="flex flex-col gap-1.5 text-xs text-sf-cream">
-        {(
-          [
-            ["buildingStorage", "mapLegendStorage"],
-            ["buildingPower", "mapLegendPower"],
-            ["buildingProduction", "mapLegendProduction"],
-            ["cables", "mapLayerCables"],
-            ["pipes", "mapLayerPipes"],
-            ["belts", "mapLayerBelts"],
-          ] as const
-        ).map(([key, labelKey]) => (
-          <li key={key}>
-            <label className="flex cursor-pointer items-center gap-2">
-              <input
-                type="checkbox"
-                checked={layerVis[key]}
-                onChange={() => toggleLayer(key)}
-                className="rounded border-sf-border"
-              />
-              <span
-                className="h-2.5 w-2.5 shrink-0 rounded-sm ring-1 ring-black/50"
-                style={{ backgroundColor: mapInfraToggleCssRgba(key) }}
-                aria-hidden
-              />
-              <span>{t(`monitoring.${labelKey}`)}</span>
-            </label>
-          </li>
-        ))}
-      </ul>
-      {infraPending ? <p className="text-[0.65rem] text-sf-muted">{t("monitoring.mapInfraLoading")}</p> : null}
-      {infraError ? <p className="text-[0.65rem] text-sf-orange">{t("monitoring.mapInfraError")}</p> : null}
-    </div>
-  );
+  const infraLayerEntries = [
+    ["buildingStorage", "mapLegendStorage"],
+    ["buildingPower", "mapLegendPower"],
+    ["buildingProduction", "mapLegendProduction"],
+    ["cables", "mapLayerCables"],
+    ["pipes", "mapLayerPipes"],
+    ["belts", "mapLayerBelts"],
+  ] as const;
 
   const detail = selected ? markerDetailForPopup(selected) : null;
 
   return (
-    <div className={`flex min-h-0 flex-1 flex-col gap-3 lg:flex-row ${className}`}>
-      <aside className="order-2 flex max-h-[min(42vh,420px)] w-full shrink-0 flex-col gap-4 overflow-y-auto rounded border border-sf-border/60 bg-black/25 p-3 lg:order-1 lg:max-h-none lg:w-64 lg:shrink-0">
-        <p className="text-[0.65rem] leading-snug text-sf-muted">{t("monitoring.mapFrmDeckHint")}</p>
-        {infraLayerToggles}
-        <div className="space-y-2">
-          <p className="text-[0.65rem] uppercase tracking-wider text-sf-muted">{t("monitoring.mapMarkersPanelTitle")}</p>
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t("monitoring.mapSearchPlaceholder")}
-            className="w-full rounded border border-sf-border bg-black/30 px-2 py-1.5 text-xs text-sf-cream outline-none placeholder:text-sf-muted focus:border-sf-orange/60"
-          />
+    <div className={`flex min-h-0 flex-1 flex-col gap-3 lg:flex-row lg:gap-4 ${className}`}>
+      <aside className="order-2 flex max-h-[min(44vh,440px)] w-full shrink-0 flex-col gap-3.5 overflow-y-auto rounded-lg border border-sf-border/70 bg-gradient-to-b from-[#232018]/95 via-[#181610] to-[#100e0c] p-3 shadow-[inset_0_1px_0_rgba(255,200,120,0.07)] ring-1 ring-black/50 sm:p-3.5 lg:order-1 lg:max-h-none lg:w-[min(100%,20.5rem)] lg:shrink-0 xl:w-[22rem]">
+        <header className="border-b border-sf-border/50 pb-3">
+          <p className="sf-display text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-sf-orange">
+            {t("monitoring.mapSidebarTitle")}
+          </p>
+          <div className="mt-2.5">
+            <span
+              className="inline-flex items-baseline gap-1 rounded-md border border-sf-cyan/30 bg-sf-cyan/[0.07] px-2.5 py-1 font-mono text-[0.7rem] tabular-nums text-sf-cyan"
+              title={t("monitoring.mapShownCount", { n: filtered.length, total: markers.length })}
+            >
+              <span>{filtered.length}</span>
+              <span className="text-sf-muted/90">/</span>
+              <span className="text-sf-muted">{markers.length}</span>
+            </span>
+          </div>
+        </header>
+
+        <div>
+          <label className="mb-1.5 flex items-center gap-1.5 text-[0.62rem] font-medium uppercase tracking-wider text-sf-muted" htmlFor="frm-map-search">
+            <IconSearch className="h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden />
+            {t("monitoring.mapMarkersPanelTitle")}
+          </label>
+          <div className="sf-input flex min-h-10 w-full items-center gap-2 !py-0 !pl-2.5 !pr-2">
+            <IconSearch className="h-4 w-4 shrink-0 text-sf-muted" aria-hidden />
+            <input
+              id="frm-map-search"
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t("monitoring.mapSearchPlaceholder")}
+              className="min-h-10 min-w-0 flex-1 border-0 bg-transparent py-2 text-sm text-sf-text outline-none placeholder:text-sf-muted"
+              autoComplete="off"
+            />
+          </div>
         </div>
-        {markerTypePicker}
-        <p className="text-xs text-sf-muted">{t("monitoring.mapShownCount", { n: filtered.length, total: markers.length })}</p>
+
+        <section className="rounded-lg border border-sf-border/55 bg-black/25 p-2.5 ring-1 ring-white/[0.03]">
+          <div className="mb-2 flex items-center gap-2 border-b border-sf-border/40 pb-2">
+            <IconLayers className="h-4 w-4 shrink-0 text-sf-orange/90" aria-hidden />
+            <h3 className="sf-display min-w-0 flex-1 text-[0.68rem] font-semibold uppercase tracking-wider text-sf-cream">
+              {t("monitoring.mapInfraLayersTitle")}
+            </h3>
+          </div>
+          <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+            {infraLayerEntries.map(([key, labelKey]) => {
+              const on = layerVis[key];
+              return (
+                <li key={key}>
+                  <button
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => toggleLayer(key)}
+                    className={
+                      "flex w-full min-w-0 items-center gap-2 rounded-md border px-2 py-1.5 text-left text-xs transition-all " +
+                      (on ?
+                        "border-sf-orange/45 bg-sf-orange/[0.1] text-sf-cream shadow-[inset_0_0_0_1px_rgba(255,154,26,0.12)]"
+                      : "border-sf-border/45 bg-black/20 text-sf-muted opacity-[0.82] hover:border-sf-border-bright/60 hover:opacity-100")
+                    }
+                  >
+                    <span
+                      className="h-2.5 w-2.5 shrink-0 rounded-sm ring-1 ring-black/60"
+                      style={{ backgroundColor: mapInfraToggleCssRgba(key) }}
+                      aria-hidden
+                    />
+                    <span className="min-w-0 flex-1 leading-snug">{t(`monitoring.${labelKey}`)}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          {infraPending ? <p className="mt-2 text-[0.62rem] text-sf-muted">{t("monitoring.mapInfraLoading")}</p> : null}
+          {infraError ? <p className="mt-2 text-[0.62rem] text-sf-orange">{t("monitoring.mapInfraError")}</p> : null}
+        </section>
+
+        <section className="rounded-lg border border-sf-border/55 bg-black/25 p-2.5 ring-1 ring-white/[0.03]">
+          <div className="mb-2 flex items-center justify-between gap-2 border-b border-sf-border/40 pb-2">
+            <h3 className="sf-display text-[0.68rem] font-semibold uppercase tracking-wider text-sf-cream">
+              {t("monitoring.mapMarkerTypes")}
+            </h3>
+            <button
+              type="button"
+              disabled={hiddenTypes.size === 0}
+              className="shrink-0 rounded border border-sf-border/70 bg-black/35 px-2 py-1 text-[0.62rem] font-medium uppercase tracking-wide text-sf-cyan transition-colors enabled:hover:border-sf-cyan/50 enabled:hover:bg-sf-cyan/10 disabled:cursor-not-allowed disabled:opacity-35"
+              onClick={showAllTypes}
+            >
+              {t("monitoring.mapResetFilters")}
+            </button>
+          </div>
+          <div className="max-h-[min(11rem,32vh)] overflow-y-auto pr-0.5 sm:max-h-52">
+            <ul className="flex flex-wrap gap-1.5">
+              {typesPresent.map((typ) => {
+                const thumb = thumbClassForMapMarker({ MapMarkerType: typ });
+                const on = !hiddenTypes.has(typ);
+                const short = typ.replace(/^RT_/, "");
+                return (
+                  <li key={typ}>
+                    <button
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => toggleType(typ)}
+                      className={
+                        "inline-flex max-w-full items-center gap-1.5 rounded-full border px-1.5 py-1 pl-1 text-left transition-all " +
+                        (on ?
+                          "border-sf-orange/50 bg-sf-orange/[0.12] text-sf-cream shadow-[0_0_0_1px_rgba(255,154,26,0.12)]"
+                        : "border-sf-border/50 bg-black/35 text-sf-muted opacity-60 hover:opacity-95")
+                      }
+                    >
+                      <ItemThumb className={thumb} label="" size={24} />
+                      <span className="max-w-[9.5rem] truncate font-mono text-[0.58rem] leading-tight" title={typ}>
+                        {short}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </section>
       </aside>
-      <div className="order-1 flex min-h-[min(48vh,480px)] min-w-0 flex-1 basis-0 flex-col gap-2 lg:order-2">
+      <div className="order-1 flex min-h-[min(50vh,520px)] min-w-0 flex-1 basis-0 flex-col lg:order-2">
         <div
           ref={mapWrapRef}
-          className="relative flex min-h-[280px] flex-1 basis-0 flex-col  rounded border border-sf-border/50 sm:min-h-[min(48vh,600px)]"
+          className="relative flex min-h-[280px] flex-1 basis-0 flex-col overflow-hidden rounded-lg border border-sf-border/60 bg-[#0a0908] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)] sm:min-h-[min(52vh,640px)]"
         >
           <FrmWorldMapDeck
             deckRef={deckRef}

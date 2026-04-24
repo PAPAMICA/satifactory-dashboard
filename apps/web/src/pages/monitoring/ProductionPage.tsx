@@ -267,7 +267,7 @@ function ProductionPageBody() {
         </div>
       </div>
 
-      <div className="sf-panel flex min-h-0 min-w-0 flex-1 flex-col  p-3 sm:p-4">
+      <div className="sf-panel flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-3 sm:p-4">
         {q.isError ?
           <p className="text-sm text-sf-orange">{(q.error as Error).message}</p>
         : q.isPending ?
@@ -275,7 +275,8 @@ function ProductionPageBody() {
         : !rows.length ?
           <p className="text-sm text-sf-muted">{t("monitoring.empty")}</p>
         : (
-          <div className="mx-auto grid min-h-0 w-full max-w-[min(100%,96rem)] flex-1 grid-cols-[repeat(auto-fill,minmax(14.5rem,1fr))] gap-x-2.5 gap-y-3 px-0.5 sm:grid-cols-[repeat(auto-fill,minmax(15.5rem,1fr))] sm:gap-x-3 sm:gap-y-3.5 sm:px-1">
+          <div className="min-h-0 flex-1 overflow-auto pr-0.5">
+          <div className="mx-auto grid min-h-0 w-full max-w-[min(100%,96rem)] grid-cols-[repeat(auto-fill,minmax(14.5rem,1fr))] content-start gap-x-2.5 gap-y-3 px-0.5 sm:grid-cols-[repeat(auto-fill,minmax(15.5rem,1fr))] sm:gap-x-3 sm:gap-y-3.5 sm:px-1">
             {shown.map((vm, i) => {
               const r = vm.row;
               const thumbCls = factoryBuildingClassForThumb(r);
@@ -366,6 +367,7 @@ function ProductionPageBody() {
                 </button>
               );
             })}
+          </div>
           </div>
         )}
       </div>

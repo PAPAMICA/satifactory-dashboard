@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "build:images": "node ./scripts/optimize-item-images.mjs",
+    "prebuild": "npm run build:images",
     "build": "vite build",
     "preview": "vite preview"
   },
@@ -28,6 +30,7 @@
     "@types/react-grid-layout": "^1.3.5",
     "@vitejs/plugin-react": "^4.3.4",
     "tailwindcss": "^4.0.3",
+    "sharp": "^0.33.5",
     "typescript": "~5.7.3",
     "vite": "^6.1.0"
   }
