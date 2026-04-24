@@ -7,14 +7,18 @@ import { frmMarkerMapPosition } from "@/lib/frmMapWorld";
 import { rgbaForFactoryMapCategory, rgbaForMapInfraFamily } from "@/lib/frmMapPalette";
 
 export type FrmMapLayerVisibility = {
-  factories: boolean;
+  buildingStorage: boolean;
+  buildingPower: boolean;
+  buildingProduction: boolean;
   cables: boolean;
   pipes: boolean;
   belts: boolean;
 };
 
 export const defaultFrmMapLayerVisibility = (): FrmMapLayerVisibility => ({
-  factories: true,
+  buildingStorage: true,
+  buildingPower: true,
+  buildingProduction: true,
   cables: true,
   pipes: true,
   belts: true,
@@ -37,6 +41,8 @@ export type FrmMapFactoryPoint = {
   id: string;
   position: [number, number];
   color: [number, number, number, number];
+  row: Record<string, unknown>;
+  category: FrmFactoryMapCategory;
 };
 
 /** Empreinte 2D d’une usine (rectangle dimensionné + rotation, comme la carte FRM). */
@@ -46,6 +52,8 @@ export type FrmMapFactoryFootprint = {
   polygon: [number, number][];
   fill: [number, number, number, number];
   line: [number, number, number, number];
+  row: Record<string, unknown>;
+  category: FrmFactoryMapCategory;
 };
 
 export type FrmMapOverlays = {
@@ -201,10 +209,13 @@ function addBuildingFootprintOrPoint(
   if (bbox2 && loc) {
     const halfWx = (bbox2.maxX - bbox2.minX) / 2;
     const halfWy = (bbox2.maxY - bbox2.minY) / 2;
-    const poly = factoryFootprintPolygon(loc.x, loc.y, halfWx, halfWy, loc.rotation);
-    factoryFootprints.push({ id: displayId, polygon: poly, fill, line });
+    /** Centre géométrique de la bbox monde : pivot de rotation plus fiable que seul le pivot FRM. */
+    const cx = (bbox2.minX + bbox2.maxX) / 2;
+    const cy = (bbox2.minY + bbox2.maxY) / 2;
+    const poly = factoryFootprintPolygon(cx, cy, halfWx, halfWy, loc.rotation);
+    factoryFootprints.push({ id: displayId, polygon: poly, fill, line, row, category });
   } else {
-    factoryPoints.push({ id: displayId, position: pos, color: fill });
+    factoryPoints.push({ id: displayId, position: pos, color: fill, row, category });
   }
 }
 
@@ -338,11 +349,18 @@ export function overlayWorldBBox(o: FrmMapOverlays, vis: FrmMapLayerVisibility):
     b = b ? expandBBox(b, x, y) : { minX: x, minY: y, maxX: x, maxY: y };
   };
 
-  if (vis.factories) {
-    for (const fp of o.factoryFootprints) {
-      for (const [x, y] of fp.polygon) bump(x, y);
-    }
-    for (const p of o.factoryPoints) bump(p.position[0], p.position[1]);
+  const buildingCatVisible = (cat: FrmFactoryMapCategory): boolean => {
+    if (cat === "storage") return vis.buildingStorage;
+    if (cat === "power") return vis.buildingPower;
+    return vis.buildingProduction;
+  };
+  for (const fp of o.factoryFootprints) {
+    if (!buildingCatVisible(fp.category)) continue;
+    for (const [x, y] of fp.polygon) bump(x, y);
+  }
+  for (const p of o.factoryPoints) {
+    if (!buildingCatVisible(p.category)) continue;
+    bump(p.position[0], p.position[1]);
   }
   if (vis.cables) {
     for (const s of o.cableSegments) {

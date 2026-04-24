@@ -10,8 +10,9 @@ import {
 import { useFrmMapInfrastructure } from "@/hooks/useFrmMapInfrastructure";
 import { useFrmMapMarkerFilters } from "@/hooks/useFrmMapMarkerFilters";
 import { useFrmRefetchMs } from "@/hooks/useFrmRefetchMs";
+import { ProductionBuildingModal } from "@/components/ProductionBuildingModal";
 import { defaultFrmMapLayerVisibility, type FrmMapLayerVisibility } from "@/lib/frmMapOverlays";
-import { factoryMapCategoryCssRgba, mapInfraToggleCssRgba } from "@/lib/frmMapPalette";
+import { mapInfraToggleCssRgba } from "@/lib/frmMapPalette";
 import { frmMarkerMapPosition } from "@/lib/frmMapWorld";
 import { thumbClassForMapMarker } from "@/lib/mapMarkerDisplay";
 
@@ -44,12 +45,14 @@ export function FrmWorldMapPage({
   );
   const [layerVis, setLayerVis] = useState<FrmMapLayerVisibility>(() => defaultFrmMapLayerVisibility());
   const [selected, setSelected] = useState<Record<string, unknown> | null>(null);
+  const [selectedBuilding, setSelectedBuilding] = useState<Record<string, unknown> | null>(null);
   const [projTick, setProjTick] = useState(0);
   const deckRef = useRef<DeckGLRef | null>(null);
   const mapWrapRef = useRef<HTMLDivElement>(null);
 
   const layerVisKey = useMemo(
-    () => `${layerVis.factories ? 1 : 0}${layerVis.cables ? 1 : 0}${layerVis.pipes ? 1 : 0}${layerVis.belts ? 1 : 0}`,
+    () =>
+      `${layerVis.buildingStorage ? 1 : 0}${layerVis.buildingPower ? 1 : 0}${layerVis.buildingProduction ? 1 : 0}${layerVis.cables ? 1 : 0}${layerVis.pipes ? 1 : 0}${layerVis.belts ? 1 : 0}`,
     [layerVis],
   );
 
@@ -59,6 +62,17 @@ export function FrmWorldMapPage({
   );
 
   const selectedId = selected ? String(selected.ID ?? selected.Id ?? "") : null;
+  const selectedBuildingId = selectedBuilding ? String(selectedBuilding.ID ?? selectedBuilding.Id ?? "") : null;
+
+  const onSelectMarker = useCallback((row: Record<string, unknown> | null) => {
+    setSelected(row);
+    if (row) setSelectedBuilding(null);
+  }, []);
+
+  const onSelectBuilding = useCallback((row: Record<string, unknown> | null) => {
+    setSelectedBuilding(row);
+    if (row) setSelected(null);
+  }, []);
 
   const bumpProj = useCallback(() => {
     setProjTick((n) => n + 1);
@@ -66,7 +80,7 @@ export function FrmWorldMapPage({
 
   useLayoutEffect(() => {
     bumpProj();
-  }, [selected, fitBoundsKey, mapAutoFitToken, bumpProj]);
+  }, [selected, selectedBuilding, fitBoundsKey, mapAutoFitToken, bumpProj]);
 
   useLayoutEffect(() => {
     const el = mapWrapRef.current;
@@ -127,7 +141,9 @@ export function FrmWorldMapPage({
       <ul className="flex flex-col gap-1.5 text-xs text-sf-cream">
         {(
           [
-            ["factories", "mapLayerFactories"],
+            ["buildingStorage", "mapLegendStorage"],
+            ["buildingPower", "mapLegendPower"],
+            ["buildingProduction", "mapLegendProduction"],
             ["cables", "mapLayerCables"],
             ["pipes", "mapLayerPipes"],
             ["belts", "mapLayerBelts"],
@@ -151,27 +167,6 @@ export function FrmWorldMapPage({
           </li>
         ))}
       </ul>
-      <div className="mt-2 border-t border-sf-border/40 pt-2">
-        <p className="text-[0.65rem] uppercase tracking-wider text-sf-muted">{t("monitoring.mapBuildingColorsTitle")}</p>
-        <ul className="mt-1.5 space-y-1 text-[0.65rem] text-sf-cream">
-          {(
-            [
-              ["storage", "mapLegendStorage"],
-              ["power", "mapLegendPower"],
-              ["production", "mapLegendProduction"],
-            ] as const
-          ).map(([cat, labelKey]) => (
-            <li key={cat} className="flex items-center gap-2">
-              <span
-                className="h-2.5 w-2.5 shrink-0 rounded-sm ring-1 ring-black/50"
-                style={{ backgroundColor: factoryMapCategoryCssRgba(cat) }}
-                aria-hidden
-              />
-              <span>{t(`monitoring.${labelKey}`)}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
       {infraPending ? <p className="text-[0.65rem] text-sf-muted">{t("monitoring.mapInfraLoading")}</p> : null}
       {infraError ? <p className="text-[0.65rem] text-sf-orange">{t("monitoring.mapInfraError")}</p> : null}
     </div>
@@ -212,7 +207,9 @@ export function FrmWorldMapPage({
             layerVisibility={layerVis}
             scrollWheelZoom={scrollWheelZoom}
             selectedId={selectedId}
-            onSelectMarker={setSelected}
+            selectedBuildingId={selectedBuildingId}
+            onSelectMarker={onSelectMarker}
+            onSelectBuilding={onSelectBuilding}
             className="min-h-0 flex-1"
           />
           {!markers.length ? (
@@ -258,6 +255,13 @@ export function FrmWorldMapPage({
           ) : null}
         </div>
       </div>
+      {selectedBuilding ?
+        <ProductionBuildingModal
+          row={selectedBuilding}
+          onClose={() => setSelectedBuilding(null)}
+          showMap={false}
+        />
+      : null}
     </div>
   );
 }

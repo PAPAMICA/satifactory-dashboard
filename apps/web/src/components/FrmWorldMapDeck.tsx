@@ -3,6 +3,7 @@ import { COORDINATE_SYSTEM, OrthographicView, type ViewStateChangeParameters } f
 import DeckGL, { type DeckGLRef } from "@deck.gl/react";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
+import type { FrmFactoryMapCategory } from "@/lib/frmFactoryMapCategory";
 import { markerLocation, thumbClassForMapMarker } from "@/lib/mapMarkerDisplay";
 import { markerFillFromFrmRow } from "@/lib/frmMapPalette";
 import {
@@ -33,6 +34,31 @@ type PlotDatum = {
   name: string;
   typ: string;
 };
+
+function filterBuildingLayer<T extends { category: FrmFactoryMapCategory }>(
+  data: T[],
+  vis: FrmMapLayerVisibility,
+): T[] {
+  return data.filter((d) => {
+    if (d.category === "storage") return vis.buildingStorage;
+    if (d.category === "power") return vis.buildingPower;
+    return vis.buildingProduction;
+  });
+}
+
+function isPlotDatum(o: unknown): o is PlotDatum {
+  return Boolean(o && typeof o === "object" && "typ" in o && "row" in o);
+}
+
+function isMapBuildingPick(o: unknown): o is FrmMapFactoryFootprint | FrmMapFactoryPoint {
+  return Boolean(
+    o &&
+      typeof o === "object" &&
+      "row" in o &&
+      "category" in o &&
+      ("polygon" in o || ("position" in o && "color" in o)),
+  );
+}
 
 type BBox = { minX: number; minY: number; maxX: number; maxY: number };
 
@@ -114,6 +140,9 @@ export type FrmWorldMapDeckProps = {
   className?: string;
   selectedId: string | null;
   onSelectMarker: (row: Record<string, unknown> | null) => void;
+  /** Sélection empreinte / point bâtiment (carte monde). */
+  selectedBuildingId?: string | null;
+  onSelectBuilding?: (row: Record<string, unknown> | null) => void;
   deckRef?: RefObject<DeckGLRef | null>;
   onAfterViewStateChange?: () => void;
   onDeckLoad?: () => void;
@@ -128,6 +157,8 @@ export function FrmWorldMapDeck({
   className = "",
   selectedId,
   onSelectMarker,
+  selectedBuildingId = null,
+  onSelectBuilding,
   deckRef,
   onAfterViewStateChange,
   onDeckLoad,
@@ -246,8 +277,10 @@ export function FrmWorldMapDeck({
     const beltData = vis.belts && o?.beltPaths.length ? o.beltPaths : [];
     const pipeData = vis.pipes && o?.pipePaths.length ? o.pipePaths : [];
     const cableData = vis.cables && o?.cableSegments.length ? o.cableSegments : [];
-    const facFootData = vis.factories && o?.factoryFootprints.length ? o.factoryFootprints : [];
-    const facData = vis.factories && o?.factoryPoints.length ? o.factoryPoints : [];
+    const facFootSrc = o?.factoryFootprints.length ? o.factoryFootprints : [];
+    const facPointSrc = o?.factoryPoints.length ? o.factoryPoints : [];
+    const facFootData = filterBuildingLayer(facFootSrc, vis);
+    const facData = filterBuildingLayer(facPointSrc, vis);
 
     const ls = [
       new BitmapLayer({
@@ -311,7 +344,7 @@ export function FrmWorldMapDeck({
           id: "frm-factory-footprints",
           data: facFootData,
           coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
-          pickable: false,
+          pickable: Boolean(onSelectBuilding),
           filled: true,
           extruded: false,
           stroked: true,
@@ -319,7 +352,8 @@ export function FrmWorldMapDeck({
           getPolygon: (d) => d.polygon,
           getFillColor: (d) => d.fill,
           getLineColor: (d) => d.line,
-          getLineWidth: 1,
+          getLineWidth: (d) => (d.id === selectedBuildingId ? 2.5 : 1),
+          updateTriggers: { getLineWidth: [selectedBuildingId] },
         }),
       );
     }
@@ -329,12 +363,13 @@ export function FrmWorldMapDeck({
           id: "frm-factories",
           data: facData,
           coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
-          pickable: false,
+          pickable: Boolean(onSelectBuilding),
           radiusUnits: "pixels",
           getPosition: (d) => d.position,
-          getRadius: 4,
+          getRadius: (d) => (d.id === selectedBuildingId ? 7 : 4),
           getFillColor: (d) => d.color,
           stroked: false,
+          updateTriggers: { getRadius: [selectedBuildingId] },
         }),
       );
     }
@@ -358,7 +393,7 @@ export function FrmWorldMapDeck({
     );
 
     return ls;
-  }, [plotData, selectedId, worldOverlays, vis]);
+  }, [plotData, selectedId, selectedBuildingId, worldOverlays, vis, onSelectBuilding]);
 
   const onViewStateChange = useCallback(
     (params: ViewStateChangeParameters<Record<string, unknown>>) => {
@@ -373,12 +408,22 @@ export function FrmWorldMapDeck({
   );
 
   const onClick = useCallback(
-    (info: { object?: PlotDatum | null }) => {
+    (info: { object?: unknown }) => {
       const o = info.object;
-      if (o && "row" in o) onSelectMarker(o.row);
-      else onSelectMarker(null);
+      if (isPlotDatum(o)) {
+        onSelectMarker(o.row);
+        onSelectBuilding?.(null);
+        return;
+      }
+      if (isMapBuildingPick(o)) {
+        onSelectBuilding?.(o.row);
+        onSelectMarker(null);
+        return;
+      }
+      onSelectMarker(null);
+      onSelectBuilding?.(null);
     },
-    [onSelectMarker],
+    [onSelectMarker, onSelectBuilding],
   );
 
   const handleDeckLoad = useCallback(() => {
@@ -405,11 +450,17 @@ export function FrmWorldMapDeck({
           layers={layers}
           onClick={onClick}
           getTooltip={({ object }) => {
-            const o = object as PlotDatum | null;
-            if (!o?.name) return null;
-            return {
-              text: `${o.name}\n${o.typ.replace(/^RT_/, "")}`,
-            };
+            const o = object;
+            if (isPlotDatum(o)) {
+              return { text: `${o.name}\n${o.typ.replace(/^RT_/, "")}` };
+            }
+            if (isMapBuildingPick(o)) {
+              const r = o.row;
+              const nm = String(r.Name ?? r.name ?? "—");
+              const cn = String(r.ClassName ?? r.className ?? "").trim();
+              return { text: cn ? `${nm}\n${cn}` : nm };
+            }
+            return null;
           }}
           style={{ position: "absolute", left: 0, top: 0, background: "#0a0c10" }}
         />

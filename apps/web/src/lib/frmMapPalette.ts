@@ -86,17 +86,25 @@ export function mapInfraFamilyCssRgba(family: keyof typeof MAP_ENTITY_FAMILY_RGB
   return `rgba(${r}, ${g}, ${b}, ${a / 255})`;
 }
 
-export type FrmMapInfraToggleKey = "factories" | "cables" | "pipes" | "belts";
+export type FrmMapInfraToggleKey =
+  | "buildingStorage"
+  | "buildingPower"
+  | "buildingProduction"
+  | "cables"
+  | "pipes"
+  | "belts";
 
-const TOGGLE_TO_FAMILY: Record<FrmMapInfraToggleKey, keyof typeof MAP_ENTITY_FAMILY_RGBA> = {
-  factories: "factory",
+const TOGGLE_TO_FAMILY: Record<"cables" | "pipes" | "belts", keyof typeof MAP_ENTITY_FAMILY_RGBA> = {
   cables: "cable",
   pipes: "pipe",
   belts: "belt",
 };
 
-/** Couleur CSS pour une case « Réseau & logistique » (`factories`, `cables`, …). */
+/** Couleur CSS pour une case calque carte (bâtiments par catégorie, câbles, …). */
 export function mapInfraToggleCssRgba(key: FrmMapInfraToggleKey): string {
+  if (key === "buildingStorage") return factoryMapCategoryCssRgba("storage");
+  if (key === "buildingPower") return factoryMapCategoryCssRgba("power");
+  if (key === "buildingProduction") return factoryMapCategoryCssRgba("production");
   return mapInfraFamilyCssRgba(TOGGLE_TO_FAMILY[key]);
 }
 
