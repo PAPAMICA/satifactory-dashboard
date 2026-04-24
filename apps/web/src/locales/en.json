@@ -177,7 +177,9 @@
       "controlGridLoad": "Total grid draw",
       "controlMapNoCoords": "No map position for these favorites (missing FRM coordinates).",
       "controlKindSwitch": "Switch",
-      "controlKindBuilding": "Building"
+      "controlKindBuilding": "Building",
+      "controlKindGroup": "Group",
+      "controlGroupBuildingCount": "{{count}} bldg."
     }
   },
   "control": {
@@ -216,9 +218,17 @@
     "favoritesGroupImagePick": "Pick from catalog…",
     "favoritesGroupImageHide": "Hide catalog",
     "favoritesGroupMembers": "Buildings in this group (checkboxes)",
+    "favoritesGroupMembersSearch": "Search by name, type, or items (inputs / outputs)…",
     "favoritesGroupSave": "Save group",
     "favoritesGroupCancel": "Cancel",
-    "assetCatalogSearch": "Search item or building (label or class)…"
+    "assetCatalogSearch": "Search item or building (label or class)…",
+    "sectionFavoriteGroups": "Favorite groups — bulk power",
+    "favoriteGroupsHint": "Turn on or off every group member that supports setEnabled.",
+    "favoriteGroupsEmpty": "No starred groups — star an existing group in favorites settings.",
+    "favoriteGroupsAllOn": "Turn all on",
+    "favoriteGroupsAllOff": "Turn all off",
+    "favoriteGroupsNoneControllable": "No setEnabled-eligible members in this group.",
+    "favoriteGroupsBusy": "Sending…"
   },
   "inventory": {
     "title": "Global inventory",
@@ -300,6 +310,10 @@
     "powerFavoritesBuildings": "Buildings",
     "powerFavAdd": "Add to favorites",
     "powerFavRemove": "Remove from favorites",
+    "powerFavoriteGroupsTitle": "Favorite groups (draw)",
+    "powerFavoriteGroupsHint": "Sum of FRM MW for members found in factory / generator data.",
+    "powerFavoriteGroupsEmpty": "Create groups and star them in « Favorites settings » (Control page) to see them here.",
+    "powerFavoriteGroupsResolved": "{{count}} in live data",
     "powerAliasPlaceholder": "Alias (optional)",
     "buildingModalSelfMwTitle": "This building’s power draw (MW)",
     "droneFleetMix": "Mix by type",

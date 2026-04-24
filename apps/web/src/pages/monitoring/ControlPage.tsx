@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ControlFavoriteGroupsBulkPanel } from "@/components/ControlFavoriteGroupsBulkPanel";
 import { ControlFavoritesSettingsModal } from "@/components/ControlFavoritesSettingsModal";
 import { FicsitPageLoader } from "@/components/FicsitPageLoader";
 import { FrmSwitchesPanel } from "@/components/FrmSwitchesPanel";
@@ -77,7 +78,6 @@ function FactoryEnableRow({
       {canPower ?
         <div className="flex shrink-0 items-center gap-2">
           <FrmIndustrialLever
-            compact
             on={guess}
             busy={busy}
             onToggle={() => {
@@ -140,7 +140,6 @@ function GeneratorEnableRow({
       {canPower ?
         <div className="flex shrink-0 items-center gap-2">
           <FrmIndustrialLever
-            compact
             on={guess}
             busy={busy}
             onToggle={() => {
@@ -233,6 +232,8 @@ function ControlPageBody() {
         </div>
         <p className="border-b border-sf-border/40 px-3 py-2 text-xs text-sf-muted sm:px-4">{t("control.powerFavoritesHint")}</p>
       </section>
+
+      <ControlFavoriteGroupsBulkPanel isAdmin={isAdmin} />
 
       <ControlFavoritesSettingsModal
         open={favoritesSettingsOpen}

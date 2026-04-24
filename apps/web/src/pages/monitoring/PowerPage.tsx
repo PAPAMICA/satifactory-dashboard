@@ -6,6 +6,7 @@ import { FicsitPageLoader } from "@/components/FicsitPageLoader";
 import { FrmPowerByBuildingType, totalGeneratorMw } from "@/components/FrmPowerByBuildingType";
 import { FrmPowerSummaryGrid } from "@/components/FrmPowerSummaryGrid";
 import { FrmPowerTrendPanel } from "@/components/FrmPowerTrendPanel";
+import { PowerFavoriteGroupsPanel } from "@/components/PowerFavoriteGroupsPanel";
 import { ItemThumb } from "@/components/ItemThumb";
 import { LinearFractionBar } from "@/components/LinearFractionBar";
 import { MonitoringGate } from "@/components/MonitoringGate";
@@ -121,6 +122,8 @@ function PowerPageBody() {
             </section>
           )}
 
+          {!me?.isPublicViewer ? <PowerFavoriteGroupsPanel /> : null}
+
           {me?.isAdmin ?
             <section className="sf-panel min-w-0 overflow-hidden">
               <div className="sf-panel-header flex min-w-0 flex-wrap items-center gap-2 border-b border-sf-border/40 bg-gradient-to-r from-sf-cyan/10 to-transparent">
@@ -189,7 +192,7 @@ function PowerPageBody() {
                           <td className="max-w-[140px] p-2">
                             <div className="font-mono text-sf-muted">{num(r.BatteryPercent)}</div>
                             <div className="mt-1">
-                              <LinearFractionBar fraction={loadFrac} />
+                              <LinearFractionBar fraction={loadFrac} size={32} />
                             </div>
                           </td>
                           <td className="p-2">{fuse ? <span className="text-sf-danger">●</span> : "—"}</td>
@@ -304,11 +307,8 @@ function PowerPageBody() {
                       <td className="p-2 align-middle text-sf-cream">{typeLabel}</td>
                       <td className="p-2 align-middle font-mono text-sf-orange">{num(mw)}</td>
                       <td className="p-2 align-middle">
-                        <div className="max-w-[200px]">
-                          <LinearFractionBar fraction={share} />
-                          <span className="mt-0.5 block font-mono text-[0.65rem] text-sf-muted">
-                            {totals.cons > 0 ? `${Math.round(share * 1000) / 10}%` : "—"}
-                          </span>
+                        <div className="flex max-w-[200px] justify-center">
+                          <LinearFractionBar fraction={share} size={36} />
                         </div>
                       </td>
                     </tr>

@@ -177,7 +177,9 @@
       "controlGridLoad": "Conso. totale réseau",
       "controlMapNoCoords": "Aucune position connue pour ces favoris (coordonnées FRM absentes).",
       "controlKindSwitch": "Interrupteur",
-      "controlKindBuilding": "Bâtiment"
+      "controlKindBuilding": "Bâtiment",
+      "controlKindGroup": "Groupe",
+      "controlGroupBuildingCount": "{{count}} bât."
     }
   },
   "control": {
@@ -216,9 +218,17 @@
     "favoritesGroupImagePick": "Choisir dans le catalogue…",
     "favoritesGroupImageHide": "Masquer le catalogue",
     "favoritesGroupMembers": "Bâtiments du groupe (cases à cocher)",
+    "favoritesGroupMembersSearch": "Rechercher par nom, type ou objets (entrée / sortie)…",
     "favoritesGroupSave": "Enregistrer le groupe",
     "favoritesGroupCancel": "Annuler",
-    "assetCatalogSearch": "Rechercher un objet ou bâtiment (libellé ou classe)…"
+    "assetCatalogSearch": "Rechercher un objet ou bâtiment (libellé ou classe)…",
+    "sectionFavoriteGroups": "Groupes favoris — actions groupées",
+    "favoriteGroupsHint": "Allumer ou éteindre en masse les bâtiments pris en charge par setEnabled.",
+    "favoriteGroupsEmpty": "Aucun groupe marqué favori — étoilez un groupe existant dans les réglages favoris.",
+    "favoriteGroupsAllOn": "Tout allumer",
+    "favoriteGroupsAllOff": "Tout éteindre",
+    "favoriteGroupsNoneControllable": "Aucun membre éligible pour setEnabled dans ce groupe.",
+    "favoriteGroupsBusy": "Envoi…"
   },
   "inventory": {
     "title": "Inventaire global",
@@ -300,6 +310,10 @@
     "powerFavoritesBuildings": "Bâtiments",
     "powerFavAdd": "Ajouter aux favoris",
     "powerFavRemove": "Retirer des favoris",
+    "powerFavoriteGroupsTitle": "Groupes favoris (consommation)",
+    "powerFavoriteGroupsHint": "Somme des MW FRM pour les membres trouvés (usine / générateurs).",
+    "powerFavoriteGroupsEmpty": "Ajoutez des groupes puis étoilez-les dans « Réglages favoris » (page Contrôle) pour les voir ici.",
+    "powerFavoriteGroupsResolved": "{{count}} dans les données",
     "powerAliasPlaceholder": "Alias (optionnel)",
     "buildingModalSelfMwTitle": "Puissance de ce bâtiment (MW)",
     "droneFleetMix": "Répartition par type",

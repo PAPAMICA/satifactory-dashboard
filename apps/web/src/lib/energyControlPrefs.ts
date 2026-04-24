@@ -11,7 +11,10 @@ export type FavoriteBuildingGroup = {
 export type EnergyControlPrefs = {
   favoriteSwitchIds: string[];
   favoriteBuildingIds: string[];
+  /** Groupes définis (nom, icône, membres). */
   favoriteBuildingGroups: FavoriteBuildingGroup[];
+  /** Sous-ensemble affiché dans le widget / Énergie / actions groupées. */
+  favoriteBuildingGroupIds: string[];
   switchAliases: Record<string, string>;
   buildingAliases: Record<string, string>;
 };
@@ -24,6 +27,7 @@ let cachedSnapshot: EnergyControlPrefs = {
   favoriteSwitchIds: [],
   favoriteBuildingIds: [],
   favoriteBuildingGroups: [],
+  favoriteBuildingGroupIds: [],
   switchAliases: {},
   buildingAliases: {},
 };
@@ -33,6 +37,7 @@ function defaultPrefs(): EnergyControlPrefs {
     favoriteSwitchIds: [],
     favoriteBuildingIds: [],
     favoriteBuildingGroups: [],
+    favoriteBuildingGroupIds: [],
     switchAliases: {},
     buildingAliases: {},
   };
@@ -52,10 +57,16 @@ function parseFavoriteGroup(raw: unknown): FavoriteBuildingGroup | null {
 function normalizePrefs(o: Partial<EnergyControlPrefs>): EnergyControlPrefs {
   const groupsRaw = Array.isArray(o.favoriteBuildingGroups) ? o.favoriteBuildingGroups : [];
   const favoriteBuildingGroups = groupsRaw.map(parseFavoriteGroup).filter(Boolean) as FavoriteBuildingGroup[];
+  const favoriteBuildingGroupIds = Array.isArray(o.favoriteBuildingGroupIds)
+    ? o.favoriteBuildingGroupIds.map(String)
+    : "favoriteBuildingGroupIds" in o
+      ? []
+      : favoriteBuildingGroups.map((g) => g.id);
   return {
     favoriteSwitchIds: Array.isArray(o.favoriteSwitchIds) ? o.favoriteSwitchIds.map(String) : [],
     favoriteBuildingIds: Array.isArray(o.favoriteBuildingIds) ? o.favoriteBuildingIds.map(String) : [],
     favoriteBuildingGroups,
+    favoriteBuildingGroupIds,
     switchAliases: o.switchAliases && typeof o.switchAliases === "object" ? { ...o.switchAliases } : {},
     buildingAliases: o.buildingAliases && typeof o.buildingAliases === "object" ? { ...o.buildingAliases } : {},
   };
@@ -87,6 +98,7 @@ function writePrefs(p: EnergyControlPrefs): void {
       ...g,
       memberBuildingIds: [...g.memberBuildingIds],
     })),
+    favoriteBuildingGroupIds: [...p.favoriteBuildingGroupIds],
     switchAliases: { ...p.switchAliases },
     buildingAliases: { ...p.buildingAliases },
   };
@@ -149,6 +161,18 @@ export function isFavoriteBuilding(id: string): boolean {
   return readEnergyControlPrefs().favoriteBuildingIds.includes(id);
 }
 
+export function isFavoriteBuildingGroup(id: string): boolean {
+  return readEnergyControlPrefs().favoriteBuildingGroupIds.includes(id);
+}
+
+export function toggleFavoriteBuildingGroup(id: string): void {
+  const p = readEnergyControlPrefs();
+  const set = new Set(p.favoriteBuildingGroupIds);
+  if (set.has(id)) set.delete(id);
+  else set.add(id);
+  writePrefs({ ...p, favoriteBuildingGroupIds: [...set] });
+}
+
 function newGroupId(): string {
   try {
     if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
@@ -191,12 +215,20 @@ export function createFavoriteBuildingGroup(partial: {
     memberBuildingIds: [...new Set(partial.memberBuildingIds.map(String))],
   };
   upsertFavoriteBuildingGroup(g);
+  const p2 = readEnergyControlPrefs();
+  if (!p2.favoriteBuildingGroupIds.includes(g.id)) {
+    writePrefs({ ...p2, favoriteBuildingGroupIds: [...p2.favoriteBuildingGroupIds, g.id] });
+  }
   return g;
 }
 
 export function removeFavoriteBuildingGroup(id: string): void {
   const p = readEnergyControlPrefs();
-  writePrefs({ ...p, favoriteBuildingGroups: p.favoriteBuildingGroups.filter((g) => g.id !== id) });
+  writePrefs({
+    ...p,
+    favoriteBuildingGroups: p.favoriteBuildingGroups.filter((g) => g.id !== id),
+    favoriteBuildingGroupIds: p.favoriteBuildingGroupIds.filter((x) => x !== id),
+  });
 }
 
 /** IDs de bâtiments déjà présents dans un groupe favori (pour éviter les doublons dans le widget). */

@@ -1,3 +1,4 @@
+import { frmgClassLabel } from "@/lib/dashboardFrmgDisplay";
 import { normalizeBuildClassName } from "@/lib/monitoringFrm";
 
 export type ProductionLine = {
@@ -69,6 +70,13 @@ export function factoryPowerConsumedMw(r: Record<string, unknown>): number {
   return Number(pi?.PowerConsumed ?? pi?.powerConsumed) || 0;
 }
 
+/** Somme des conso MW FRM pour une liste de lignes usine / générateur. */
+export function sumFactoryRowsPowerMw(rows: Record<string, unknown>[]): number {
+  let s = 0;
+  for (const r of rows) s += factoryPowerConsumedMw(r);
+  return s;
+}
+
 export function factoryPowerMaxMw(r: Record<string, unknown>): number {
   const pi = factoryPowerInfo(r);
   return Number(pi?.MaxPowerConsumed ?? pi?.maxPowerConsumed) || 0;
@@ -133,4 +141,44 @@ export function factoryStatusBucket(r: Record<string, unknown>): FactoryStatusBu
   if (paused) return "paused";
   if (producing) return "producing";
   return "standby";
+}
+
+function appendLineSearchParts(parts: string[], lines: ProductionLine[], lang: string, altLang: string) {
+  for (const line of lines) {
+    const c = String(line.ClassName ?? line.className ?? "").trim();
+    if (!c) continue;
+    parts.push(c, frmgClassLabel(c, lang), frmgClassLabel(c, altLang));
+    const nm = String(line.Name ?? line.name ?? "").trim();
+    if (nm) parts.push(nm);
+  }
+}
+
+/**
+ * Chaîne de recherche (minuscules) pour un bâtiment FRM : nom instance, type(s),
+ * recettes sorties / ingrédients (classes + libellés), complément générateur si présent.
+ */
+export function frmBuildingRowSearchBlob(r: Record<string, unknown>, lang: string): string {
+  const parts: string[] = [];
+  parts.push(String(r.Name ?? r.name ?? ""));
+  const thumb = factoryBuildingClassForThumb(r);
+  const altLang = lang.toLowerCase().startsWith("fr") ? "en" : "fr";
+  parts.push(thumb, frmgClassLabel(thumb, lang), frmgClassLabel(thumb, altLang));
+  const raw = String(r.ClassName ?? r.className ?? "").trim();
+  parts.push(raw);
+  if (raw) {
+    const n = normalizeBuildClassName(raw);
+    if (n && n !== "—") parts.push(n, frmgClassLabel(n, lang), frmgClassLabel(n, altLang));
+  }
+  appendLineSearchParts(parts, factoryProductionLines(r), lang, altLang);
+  appendLineSearchParts(parts, factoryIngredientLines(r), lang, altLang);
+  const supplement = (r.Supplement ?? r.supplement) as Record<string, unknown> | undefined;
+  if (supplement && typeof supplement === "object") {
+    parts.push(String(supplement.Name ?? supplement.name ?? ""));
+    const sc = String(supplement.ClassName ?? supplement.className ?? "").trim();
+    if (sc) parts.push(sc, frmgClassLabel(sc, lang), frmgClassLabel(sc, altLang));
+  }
+  return parts
+    .filter((s) => s.length > 0)
+    .join(" ")
+    .toLowerCase();
 }

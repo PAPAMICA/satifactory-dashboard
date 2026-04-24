@@ -6,6 +6,7 @@ import { FrmAssetClassPicker } from "@/components/FrmAssetClassPicker";
 import { ItemThumb } from "@/components/ItemThumb";
 import { useOpenBuildingDetail } from "@/contexts/BuildingDetailModalContext";
 import { useFrmRefetchMs } from "@/hooks/useFrmRefetchMs";
+import { apiFetch } from "@/lib/api";
 import {
   createFavoriteBuildingGroup,
   readEnergyControlPrefs,
@@ -14,6 +15,7 @@ import {
   setSwitchAlias,
   subscribeEnergyPrefs,
   toggleFavoriteBuilding,
+  toggleFavoriteBuildingGroup,
   toggleFavoriteSwitch,
   upsertFavoriteBuildingGroup,
   type FavoriteBuildingGroup,
@@ -22,7 +24,7 @@ import { asFrmRowArray } from "@/lib/frmRows";
 import { frmGetUrl } from "@/lib/frmApi";
 import { switchRowId } from "@/lib/frmControl";
 import { frmgClassLabel } from "@/lib/dashboardFrmgDisplay";
-import { factoryBuildingClassForThumb } from "@/lib/productionFrm";
+import { factoryBuildingClassForThumb, frmBuildingRowSearchBlob } from "@/lib/productionFrm";
 import { normalizeBuildClassName } from "@/lib/monitoringFrm";
 
 type Draft = {
@@ -62,6 +64,7 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
   const openBuildingDetail = useOpenBuildingDetail();
   const [draft, setDraft] = useState<Draft | null>(null);
   const [showAssetPicker, setShowAssetPicker] = useState(false);
+  const [memberSearch, setMemberSearch] = useState("");
 
   const swQ = useQuery({
     queryKey: ["frm", "getSwitches"],
@@ -105,6 +108,13 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
     return rows;
   }, [factories, generators, i18n.language]);
 
+  const filteredMemberRows = useMemo(() => {
+    const q = memberSearch.trim().toLowerCase();
+    const lang = i18n.language;
+    if (!q) return buildingRows;
+    return buildingRows.filter(({ row }) => frmBuildingRowSearchBlob(row, lang).includes(q));
+  }, [buildingRows, memberSearch, i18n.language]);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -115,6 +125,7 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
   }, [open, onClose]);
 
   const startNewDraft = useCallback(() => {
+    setMemberSearch("");
     setDraft({
       name: "",
       thumbClass: "Build_ManufacturerMk1_C",
@@ -124,6 +135,7 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
   }, []);
 
   const startEditDraft = useCallback((g: FavoriteBuildingGroup) => {
+    setMemberSearch("");
     setDraft({
       id: g.id,
       name: g.name,
@@ -150,6 +162,7 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
       });
     }
     setDraft(null);
+    setMemberSearch("");
     setShowAssetPicker(false);
   }, [draft]);
 
@@ -167,29 +180,21 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
 
   return (
     <div
-      className="fixed inset-0 z-[120] flex items-end justify-center bg-black/75 p-0 sm:items-center sm:p-4"
-      role="presentation"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      role="dialog"
+      aria-modal
+      aria-labelledby="control-fav-settings-title"
+      className="fixed inset-0 z-[120] flex h-[100dvh] w-full max-w-none flex-col overflow-hidden border-0 bg-[#14120f] shadow-none"
     >
-      <div
-        role="dialog"
-        aria-modal
-        aria-labelledby="control-fav-settings-title"
-        className="flex max-h-[min(92dvh,880px)] w-full max-w-3xl flex-col overflow-hidden rounded-t-xl border border-sf-border/80 bg-[#14120f] shadow-2xl sm:rounded-xl"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-sf-border/60 px-4 py-3">
-          <h2 id="control-fav-settings-title" className="sf-display text-sm font-semibold uppercase tracking-wider text-sf-cream sm:text-base">
-            {t("control.favoritesSettingsTitle")}
-          </h2>
-          <button type="button" className="sf-btn shrink-0 text-xs" onClick={onClose}>
-            {t("monitoring.productionClose")}
-          </button>
-        </div>
+      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-sf-border/60 px-4 py-3 sm:px-5">
+        <h2 id="control-fav-settings-title" className="sf-display text-sm font-semibold uppercase tracking-wider text-sf-cream sm:text-base">
+          {t("control.favoritesSettingsTitle")}
+        </h2>
+        <button type="button" className="sf-btn shrink-0 text-xs" onClick={onClose}>
+          {t("monitoring.productionClose")}
+        </button>
+      </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
           <div className="space-y-8">
             <section>
               <h3 className="mb-2 text-[0.65rem] font-semibold uppercase tracking-wider text-sf-muted">
@@ -294,11 +299,18 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
 
               {prefs.favoriteBuildingGroups.length ?
                 <ul className="mb-4 space-y-2">
-                  {prefs.favoriteBuildingGroups.map((g) => (
+                  {prefs.favoriteBuildingGroups.map((g) => {
+                    const groupFav = prefs.favoriteBuildingGroupIds.includes(g.id);
+                    return (
                     <li
                       key={g.id}
                       className="flex flex-wrap items-center gap-2 rounded-lg border border-sf-orange/25 bg-black/25 p-2"
                     >
+                      <StarBtn
+                        on={groupFav}
+                        onClick={() => toggleFavoriteBuildingGroup(g.id)}
+                        label={groupFav ? t("monitoring.powerFavRemove") : t("monitoring.powerFavAdd")}
+                      />
                       <ItemThumb className={g.thumbClass} label="" size={36} />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium text-sf-cream">{g.name}</p>
@@ -317,7 +329,8 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
                         {t("control.favoritesGroupDelete")}
                       </button>
                     </li>
-                  ))}
+                  );
+                  })}
                 </ul>
               : (
                 <p className="mb-4 text-xs text-sf-muted">{t("control.favoritesNoGroupsYet")}</p>
@@ -355,25 +368,51 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
                     </div>
                     <div>
                       <p className="mb-1 text-[0.65rem] text-sf-muted">{t("control.favoritesGroupMembers")}</p>
+                      <input
+                        type="search"
+                        value={memberSearch}
+                        onChange={(e) => setMemberSearch(e.target.value)}
+                        placeholder={t("control.favoritesGroupMembersSearch")}
+                        className="sf-input mb-2 min-h-8 w-full text-xs"
+                      />
                       <div className="max-h-40 overflow-y-auto rounded border border-sf-border/40 bg-black/20 p-2">
-                        <ul className="space-y-1">
-                          {buildingRows.map(({ id, row }) => {
-                            const thumb = factoryBuildingClassForThumb(row);
-                            const raw = String(row.ClassName ?? row.className ?? "").trim();
-                            const norm = raw ? normalizeBuildClassName(raw) : "—";
-                            const img = norm !== "—" ? norm : thumb;
-                            const on = draft.memberIds.includes(id);
-                            return (
-                              <li key={`m-${id}`}>
-                                <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 hover:bg-white/[0.04]">
-                                  <input type="checkbox" checked={on} onChange={() => toggleMember(id)} className="rounded" />
-                                  <ItemThumb className={img} label="" size={24} />
-                                  <span className="truncate text-xs text-sf-cream">{frmgClassLabel(img, i18n.language)}</span>
-                                </label>
-                              </li>
-                            );
-                          })}
-                        </ul>
+                        {!filteredMemberRows.length ?
+                          <p className="py-3 text-center text-xs text-sf-muted">{t("monitoring.empty")}</p>
+                        : (
+                          <ul className="space-y-1">
+                            {filteredMemberRows.map(({ id, row }) => {
+                              const thumb = factoryBuildingClassForThumb(row);
+                              const raw = String(row.ClassName ?? row.className ?? "").trim();
+                              const norm = raw ? normalizeBuildClassName(raw) : "—";
+                              const img = norm !== "—" ? norm : thumb;
+                              const on = draft.memberIds.includes(id);
+                              const displayName = frmgClassLabel(img, i18n.language);
+                              return (
+                                <li key={`m-${id}`}>
+                                  <div className="flex items-center gap-2 rounded px-1 py-0.5 hover:bg-white/[0.04]">
+                                    <input
+                                      type="checkbox"
+                                      checked={on}
+                                      onChange={() => toggleMember(id)}
+                                      className="shrink-0 rounded"
+                                      aria-label={displayName}
+                                    />
+                                    <ItemThumb className={img} label="" size={24} />
+                                    <button
+                                      type="button"
+                                      className="min-w-0 flex-1 truncate text-left text-xs font-medium text-sf-cyan underline decoration-sf-border/60 decoration-dotted underline-offset-2 hover:text-sf-orange hover:decoration-sf-orange/60"
+                                      onClick={() =>
+                                        openBuildingDetail(row, { showMap: true, showAdminControls: isAdmin })
+                                      }
+                                    >
+                                      {displayName}
+                                    </button>
+                                  </div>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2 pt-1">
@@ -385,6 +424,7 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
                         className="rounded border border-sf-border/60 px-3 py-1.5 text-xs text-sf-muted hover:border-sf-orange/40"
                         onClick={() => {
                           setDraft(null);
+                          setMemberSearch("");
                           setShowAssetPicker(false);
                         }}
                       >
@@ -397,7 +437,6 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
             </section>
           </div>
         </div>
-      </div>
     </div>
   );
 }

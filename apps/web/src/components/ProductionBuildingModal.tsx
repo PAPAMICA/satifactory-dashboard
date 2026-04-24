@@ -527,7 +527,7 @@ export function ProductionBuildingModal({ row, onClose, showMap = true, showAdmi
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex flex-col bg-black/80 p-0 sm:p-2"
+      className="fixed inset-0 z-[130] flex flex-col bg-black/80 p-0 sm:p-2"
       role="presentation"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();

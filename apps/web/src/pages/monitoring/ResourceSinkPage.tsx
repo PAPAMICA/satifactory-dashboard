@@ -75,7 +75,7 @@ function SinkSection({
                       <span className="text-sf-muted">{t("monitoring.sinkPercent")}</span>
                       <span className="font-mono text-sf-orange">{String(r.Percent ?? "—")}</span>
                     </div>
-                    <LinearFractionBar fraction={frac} />
+                    <LinearFractionBar fraction={frac} size={44} />
                     <dl className="grid grid-cols-2 gap-1">
                       <dt className="text-sf-muted">{t("monitoring.sinkCoupons")}</dt>
                       <dd className="font-mono text-sf-ok">{String(r.NumCoupon ?? "—")}</dd>

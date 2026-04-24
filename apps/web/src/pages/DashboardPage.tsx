@@ -7,6 +7,7 @@ import { IconLayers, IconTrendUp } from "@/components/InventoryIcons";
 import { FrmPowerByBuildingType, totalGeneratorMw } from "@/components/FrmPowerByBuildingType";
 import { FrmPowerSummaryGrid } from "@/components/FrmPowerSummaryGrid";
 import { FrmPowerTrendPanel } from "@/components/FrmPowerTrendPanel";
+import { FractionDonut } from "@/components/FractionDonut";
 import { FrmDashboardControlWidget } from "@/components/FrmDashboardControlWidget";
 import { useOpenBuildingDetail } from "@/contexts/BuildingDetailModalContext";
 import { FicsitPageLoader } from "@/components/FicsitPageLoader";
@@ -160,26 +161,6 @@ function deliveryProgressFraction(target: number, delivered: number): number {
   return Math.min(1, d / target);
 }
 
-function ItemProgressBar({ fraction }: { fraction: number }) {
-  const pct = Math.round(fraction * 100);
-  return (
-    <div
-      className="w-full min-w-0 max-w-full"
-      role="progressbar"
-      aria-valuenow={pct}
-      aria-valuemin={0}
-      aria-valuemax={100}
-    >
-      <div className="h-1 w-full min-w-0 overflow-hidden rounded-full bg-black/45 ring-1 ring-sf-border/40">
-        <div
-          className="h-full rounded-full bg-gradient-to-r from-sf-orange/90 to-sf-cyan/80 transition-[width] duration-300"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
 /** Icône « Bon FICSIT » / coupon sink (même classe que les traductions items). */
 const SINK_COUPON_CLASS = "Desc_ResourceSinkCoupon_C";
 
@@ -231,7 +212,9 @@ function DashboardSinkEntry({
           <p className="text-[0.6rem] uppercase tracking-wider text-sf-muted">{sectionLabel}</p>
           <p className="line-clamp-2 w-full text-center text-sm font-semibold text-sf-cream">{name}</p>
         </div>
-        <ItemProgressBar fraction={pctNum / 100} />
+        <div className="flex justify-center py-1">
+          <FractionDonut fraction={pctNum / 100} size={56} />
+        </div>
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="rounded-md border border-sf-border/60 bg-black/20 px-2 py-1.5">
             <p className="text-[0.58rem] uppercase tracking-wider text-sf-muted">{t("dashboard.widgets.sinkCoupons")}</p>
@@ -267,8 +250,8 @@ function DashboardSinkEntry({
           </span>
           <span className="min-w-0 truncate text-sm font-semibold text-sf-cream">{name}</span>
         </div>
-        <div className="mt-1.5 min-w-0">
-          <ItemProgressBar fraction={pctNum / 100} />
+        <div className="mt-1.5 flex min-w-0 justify-center">
+          <FractionDonut fraction={pctNum / 100} size={40} />
         </div>
         <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-[0.65rem] sm:grid-cols-4 sm:text-xs">
           <div className="min-w-0">
@@ -1307,13 +1290,7 @@ export function DashboardPage() {
             (variantIsVisual ? "bg-sf-orange/15 text-sf-orange" : "bg-black/30 text-sf-muted")
           }
         >
-          {id === "ctrl" ?
-            variantIsVisual ?
-              t("dashboard.widgets.controlMapBadge")
-            : t("dashboard.widgets.controlListBadge")
-          : variantIsVisual ?
-            t("dashboard.widgets.cardsBadge")
-          : t("dashboard.widgets.listBadge")}
+          {variantIsVisual ? t("dashboard.widgets.cardsBadge") : t("dashboard.widgets.listBadge")}
         </span>
         {editMode ? (
           <div className="flex shrink-0 items-center gap-0.5">
@@ -1346,24 +1323,8 @@ export function DashboardPage() {
             <button
               type="button"
               className="rounded p-1.5 text-sf-muted hover:bg-black/40 hover:text-sf-orange"
-              title={
-                id === "ctrl" ?
-                  variantIsVisual ?
-                    t("dashboard.widgets.controlToggleToList")
-                  : t("dashboard.widgets.controlToggleToMap")
-                : variantIsVisual ?
-                  t("dashboard.toggleToList")
-                : t("dashboard.toggleToCards")
-              }
-              aria-label={
-                id === "ctrl" ?
-                  variantIsVisual ?
-                    t("dashboard.widgets.controlToggleToList")
-                  : t("dashboard.widgets.controlToggleToMap")
-                : variantIsVisual ?
-                  t("dashboard.toggleToList")
-                : t("dashboard.toggleToCards")
-              }
+              title={variantIsVisual ? t("dashboard.toggleToList") : t("dashboard.toggleToCards")}
+              aria-label={variantIsVisual ? t("dashboard.toggleToList") : t("dashboard.toggleToCards")}
               onMouseDown={(e) => e.stopPropagation()}
               onClick={() => toggleWidgetVariant(id)}
             >
@@ -1438,7 +1399,7 @@ export function DashboardPage() {
         if (!me?.isAdmin) {
           return <p className="p-3 text-xs text-sf-muted">{t("dashboard.widgets.controlAdminOnly")}</p>;
         }
-        return <FrmDashboardControlWidget editMode={editMode} variant={v} />;
+        return <FrmDashboardControlWidget variant={v} />;
       default:
         return <p className="p-3 text-sm text-sf-muted">{t("dashboard.widgets.unknown")}</p>;
     }
@@ -1702,7 +1663,9 @@ function CostProgressTable({
                 </tr>
                 <tr className="border-b border-sf-border/60 hover:bg-black/20">
                   <td colSpan={colCount} className="min-w-0 max-w-full px-1 pb-0.5 pt-0 sm:px-1.5 sm:pb-1">
-                    <ItemProgressBar fraction={frac} />
+                    <div className="flex justify-center py-1">
+                      <FractionDonut fraction={frac} size={44} />
+                    </div>
                   </td>
                 </tr>
               </Fragment>
@@ -1782,8 +1745,8 @@ function CostProgressCards({
                   <dd className="font-mono text-sf-cyan">{formatIntegerSpaces(Math.round(g))}</dd>
                 </div>
               </dl>
-              <div className="mt-2 min-w-0">
-                <ItemProgressBar fraction={frac} />
+              <div className="mt-2 flex min-w-0 justify-center">
+                <FractionDonut fraction={frac} size={52} />
               </div>
             </div>
           </div>

@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { FractionDonut } from "@/components/FractionDonut";
 import { ItemThumb } from "@/components/ItemThumb";
 import { usePowerUsageMwByClassHistory } from "@/hooks/usePowerUsageMwByClassHistory";
 import { frmgClassLabel } from "@/lib/dashboardFrmgDisplay";
@@ -65,30 +66,6 @@ function MiniMwSparkline({
         points={pts}
       />
     </svg>
-  );
-}
-
-function TypeProgressBar({ fraction, kind }: { fraction: number; kind: "consumption" | "production" }) {
-  const pct = Math.round(Math.min(1, Math.max(0, fraction)) * 100);
-  const grad =
-    kind === "production" ?
-      "from-sf-ok/90 to-sf-orange/75"
-    : "from-sf-orange/90 to-sf-cyan/80";
-  return (
-    <div
-      className="w-full min-w-0 max-w-full"
-      role="progressbar"
-      aria-valuenow={pct}
-      aria-valuemin={0}
-      aria-valuemax={100}
-    >
-      <div className="h-1 w-full min-w-0 overflow-hidden rounded-full bg-black/45 ring-1 ring-sf-border/40">
-        <div
-          className={`h-full rounded-full bg-gradient-to-r ${grad} transition-[width] duration-300`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
   );
 }
 
@@ -173,8 +150,12 @@ export function FrmPowerByBuildingType({
                   <p className="mt-0.5 truncate text-[0.65rem] text-sf-muted" title={row.className}>
                     {t("dashboard.widgets.powerByTypeCount", { count: row.count })}
                   </p>
-                  <div className="mt-2">
-                    <TypeProgressBar fraction={frac} kind={kind} />
+                  <div className="mt-2 flex justify-center">
+                    <FractionDonut
+                      fraction={frac}
+                      size={48}
+                      variant={kind === "production" ? "production" : "consumption"}
+                    />
                   </div>
                   {historyEnabled ?
                     <MiniMwSparkline

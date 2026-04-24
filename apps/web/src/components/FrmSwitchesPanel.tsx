@@ -89,13 +89,7 @@ export function FrmSwitchesPanel({ className = "", compact }: Props) {
               </div>
             </button>
             <div className="flex shrink-0 items-center gap-2 sm:pl-2">
-              <FrmIndustrialLever
-                compact={compact}
-                showLabels={false}
-                on={on}
-                busy={busy}
-                onToggle={() => mut.mutate({ id, status: !on })}
-              />
+              <FrmIndustrialLever on={on} busy={busy} onToggle={() => mut.mutate({ id, status: !on })} />
             </div>
           </li>
         );

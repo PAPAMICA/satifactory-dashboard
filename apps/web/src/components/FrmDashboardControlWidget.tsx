@@ -1,18 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
+import { FractionDonut } from "@/components/FractionDonut";
 import { FrmIndustrialLever } from "@/components/FrmIndustrialLever";
-import { FrmWorldMapDeck } from "@/components/FrmWorldMapDeck";
 import { ItemThumb } from "@/components/ItemThumb";
 import { useOpenBuildingDetail } from "@/contexts/BuildingDetailModalContext";
 import { useFrmRefetchMs } from "@/hooks/useFrmRefetchMs";
 import { apiFetch } from "@/lib/api";
 import {
+  buildingIdsInFavoriteGroups,
   readEnergyControlPrefs,
   subscribeEnergyPrefs,
-  toggleFavoriteBuilding,
-  toggleFavoriteSwitch,
+  type FavoriteBuildingGroup,
 } from "@/lib/energyControlPrefs";
+import { rowSupportsSetEnabled } from "@/lib/frmBuildingPowerPolicy";
 import { asFrmRowArray } from "@/lib/frmRows";
 import { frmGetUrl } from "@/lib/frmApi";
 import {
@@ -26,72 +27,98 @@ import {
 } from "@/lib/frmControl";
 import { frmgClassLabel } from "@/lib/dashboardFrmgDisplay";
 import type { WidgetVariant } from "@/lib/dashboardWidgetCatalog";
-import { emptyFrmMapOverlays } from "@/lib/frmMapOverlays";
-import { frmMarkerMapPosition } from "@/lib/frmMapWorld";
 import { formatDecimalSpaces } from "@/lib/formatNumber";
 import { normalizeBuildClassName, sumCircuitField } from "@/lib/monitoringFrm";
 import {
   factoryBuildingClassForThumb,
   factoryPowerConsumedMw,
+  sumFactoryRowsPowerMw,
 } from "@/lib/productionFrm";
 
 type Props = {
-  editMode: boolean;
   variant: WidgetVariant;
 };
 
 type Card =
   | { kind: "switch"; id: string; row: Record<string, unknown> }
-  | { kind: "building"; id: string; row: Record<string, unknown> };
+  | { kind: "building"; id: string; row: Record<string, unknown> }
+  | {
+      kind: "group";
+      id: string;
+      group: FavoriteBuildingGroup;
+      members: { id: string; row: Record<string, unknown> }[];
+    };
 
-function isPowerSwitchRow(r: Record<string, unknown>): boolean {
-  return /Build_(Priority)?PowerSwitch/i.test(String(r.ClassName ?? r.className ?? ""));
+function rowForBuildingId(
+  id: string,
+  factories: Record<string, unknown>[],
+  generators: Record<string, unknown>[],
+): Record<string, unknown> | undefined {
+  const fac = factories.find((r) => String(r.ID ?? r.Id ?? "") === id);
+  if (fac) return fac;
+  return generators.find((r) => String(r.ID ?? r.Id ?? r.id ?? "") === id);
 }
 
 function rowConsumedMw(r: Record<string, unknown>): number {
   return factoryPowerConsumedMw(r);
 }
 
-function MwShareBar({ pct }: { pct: number }) {
-  const w = Math.min(100, Math.max(0, pct));
-  return (
-    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-black/50 ring-1 ring-sf-border/35">
-      <div
-        className="h-full rounded-full bg-gradient-to-r from-sf-cyan/75 via-sf-cyan/50 to-sf-orange/85 transition-[width] duration-300"
-        style={{ width: `${w}%` }}
-      />
-    </div>
-  );
-}
-
-function PowerMwLine({ mw, pctOfGrid, gridTotalMw }: { mw: number; pctOfGrid: number | null; gridTotalMw: number }) {
+function ControlPowerBlock({
+  mw,
+  pctOfGrid,
+  gridTotalMw,
+  donutSize,
+  visual,
+}: {
+  mw: number;
+  pctOfGrid: number | null;
+  gridTotalMw: number;
+  donutSize: number;
+  visual: boolean;
+}) {
   const { t } = useTranslation();
-  return (
-    <div className="mt-1 space-y-0.5">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
-        <span className="font-mono text-[0.72rem] tabular-nums text-sf-orange sm:text-xs">
-          {formatDecimalSpaces(mw, 2)} MW
-        </span>
-        {pctOfGrid != null && gridTotalMw > 0 ?
-          <span className="text-[0.65rem] tabular-nums text-sf-muted">
-            {formatDecimalSpaces(pctOfGrid, 1)}%{" "}
-            <span className="font-normal text-sf-muted/80">{t("dashboard.widgets.controlOfGrid")}</span>
+  const frac = pctOfGrid != null && gridTotalMw > 0 ? Math.min(1, (pctOfGrid as number) / 100) : 0;
+  const hasPct = pctOfGrid != null && gridTotalMw > 0;
+
+  if (visual) {
+    return (
+      <div className="mt-auto w-full border-t border-sf-border/50 pt-2">
+        <div className="flex items-center justify-center gap-1.5 text-sf-cyan">
+          <span className="sf-display text-base font-semibold tabular-nums sm:text-lg">
+            {formatDecimalSpaces(mw, 2)}
           </span>
-        : <span className="text-[0.65rem] text-sf-muted">—</span>}
+          <span className="text-[0.55rem] font-normal text-sf-muted">MW</span>
+        </div>
+        <div className="mt-2 flex flex-col items-center gap-1">
+          {hasPct ?
+            <>
+              <FractionDonut fraction={frac} size={donutSize} variant="consumption" showCenterLabel={donutSize >= 26} />
+              <span className="text-center text-[0.55rem] leading-tight text-sf-muted">{t("dashboard.widgets.controlOfGrid")}</span>
+            </>
+          : <span className="text-[0.65rem] text-sf-muted">—</span>}
+        </div>
       </div>
-      {pctOfGrid != null && gridTotalMw > 0 ? <MwShareBar pct={pctOfGrid} /> : null}
+    );
+  }
+
+  return (
+    <div className="flex shrink-0 flex-col items-end gap-0.5">
+      <span className="font-mono text-[0.65rem] tabular-nums text-sf-orange sm:text-xs">
+        {formatDecimalSpaces(mw, 2)} MW
+      </span>
+      {hasPct ?
+        <FractionDonut fraction={frac} size={donutSize} variant="consumption" showCenterLabel={donutSize >= 26} />
+      : <span className="text-[0.6rem] text-sf-muted">—</span>}
     </div>
   );
 }
 
-export function FrmDashboardControlWidget({ editMode, variant }: Props) {
+export function FrmDashboardControlWidget({ variant }: Props) {
   const { t, i18n } = useTranslation();
   const qc = useQueryClient();
   const openBuildingDetail = useOpenBuildingDetail();
   const prefs = useSyncExternalStore(subscribeEnergyPrefs, readEnergyControlPrefs, readEnergyControlPrefs);
   const refetchMs = useFrmRefetchMs();
-  const [mapSelectedId, setMapSelectedId] = useState<string | null>(null);
-  const emptyOverlays = useMemo(() => emptyFrmMapOverlays(), []);
 
   const { data: me } = useQuery({
     queryKey: ["me"],
@@ -130,12 +157,24 @@ export function FrmDashboardControlWidget({ editMode, variant }: Props) {
   const gridTotalMw = useMemo(() => sumCircuitField(circuits, "PowerConsumed"), [circuits]);
 
   const cards: Card[] = useMemo(() => {
+    const inAnyGroup = buildingIdsInFavoriteGroups();
     const out: Card[] = [];
     for (const id of prefs.favoriteSwitchIds) {
       const row = switches.find((s) => switchRowId(s) === id);
       if (row) out.push({ kind: "switch", id, row });
     }
+    for (const gid of prefs.favoriteBuildingGroupIds) {
+      const group = prefs.favoriteBuildingGroups.find((g) => g.id === gid);
+      if (!group) continue;
+      const members: { id: string; row: Record<string, unknown> }[] = [];
+      for (const mid of group.memberBuildingIds) {
+        const row = rowForBuildingId(mid, factories, generators);
+        if (row) members.push({ id: mid, row });
+      }
+      out.push({ kind: "group", id: gid, group, members });
+    }
     for (const id of prefs.favoriteBuildingIds) {
+      if (inAnyGroup.has(id)) continue;
       const fac = factories.find((r) => String(r.ID ?? r.Id ?? "") === id);
       if (fac) {
         out.push({ kind: "building", id, row: fac });
@@ -145,33 +184,15 @@ export function FrmDashboardControlWidget({ editMode, variant }: Props) {
       if (gen) out.push({ kind: "building", id, row: gen });
     }
     return out;
-  }, [prefs.favoriteSwitchIds, prefs.favoriteBuildingIds, switches, factories, generators]);
-
-  const mapMarkers = useMemo(() => cards.map((c) => c.row).filter((r) => frmMarkerMapPosition(r) != null), [cards]);
-
-  const mapAutoFitToken = useMemo(() => {
-    return mapMarkers
-      .map((r) => {
-        const p = frmMarkerMapPosition(r);
-        const id = String(r.ID ?? r.Id ?? "");
-        return p ? `${id}:${p[0].toFixed(0)}:${p[1].toFixed(0)}` : "";
-      })
-      .join("|");
-  }, [mapMarkers]);
-
-  const onMapSelectMarker = useCallback(
-    (row: Record<string, unknown> | null) => {
-      if (!row) {
-        setMapSelectedId(null);
-        return;
-      }
-      const id = String(row.ID ?? row.Id ?? "");
-      setMapSelectedId(id || null);
-      const sw = isPowerSwitchRow(row);
-      openBuildingDetail(row, { showMap: !sw, showAdminControls: Boolean(me?.isAdmin) });
-    },
-    [me?.isAdmin, openBuildingDetail],
-  );
+  }, [
+    prefs.favoriteSwitchIds,
+    prefs.favoriteBuildingIds,
+    prefs.favoriteBuildingGroupIds,
+    prefs.favoriteBuildingGroups,
+    switches,
+    factories,
+    generators,
+  ]);
 
   const swMut = useMutation({
     mutationFn: (p: { id: string; status: boolean }) => postSetSwitches({ ID: p.id, status: p.status }),
@@ -190,57 +211,70 @@ export function FrmDashboardControlWidget({ editMode, variant }: Props) {
     },
   });
 
-  const renderCard = (c: Card, layout: "list" | "mapRail") => {
-    const id = c.id;
-    const rail = layout === "mapRail";
-    if (c.kind === "switch") {
-      const r = c.row;
-      const cls = String(r.ClassName ?? r.className ?? "Build_PowerSwitch_C").trim();
-      const aliasSw = prefs.switchAliases[id]?.trim();
-      const title = aliasSw || frmgClassLabel(cls, i18n.language);
-      const on = switchRowIsOn(r);
-      const busy = swMut.isPending && swMut.variables?.id === id;
-      const mw = rowConsumedMw(r);
-      const pctOfGrid = gridTotalMw > 1e-9 ? (mw / gridTotalMw) * 100 : null;
+  const listUl =
+    "flex min-h-0 w-full min-w-0 flex-1 flex-col gap-1.5 overflow-y-auto overflow-x-hidden p-2 sm:p-3";
+  const cardUl =
+    "grid min-h-0 w-full min-w-0 flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(148px,1fr))] gap-2 overflow-y-auto overflow-x-hidden p-2 sm:gap-3 sm:p-3 md:grid-cols-[repeat(auto-fill,minmax(168px,1fr))]";
+
+  const pctForMw = (mw: number) => (gridTotalMw > 1e-9 ? (mw / gridTotalMw) * 100 : null);
+
+  const renderSwitch = (id: string, r: Record<string, unknown>, visual: boolean, thumb: number) => {
+    const cls = String(r.ClassName ?? r.className ?? "Build_PowerSwitch_C").trim();
+    const aliasSw = prefs.switchAliases[id]?.trim();
+    const title = aliasSw || frmgClassLabel(cls, i18n.language);
+    const on = switchRowIsOn(r);
+    const busy = swMut.isPending && swMut.variables?.id === id;
+    const mw = rowConsumedMw(r);
+    const pctOfGrid = pctForMw(mw);
+    if (visual) {
       return (
         <li
           key={`sw-${id}`}
-          className={
-            rail ?
-              "flex flex-col gap-2 rounded-xl border border-sf-border/60 bg-gradient-to-b from-black/40 to-[#100e0c] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ring-1 ring-black/35"
-            : "flex flex-col gap-2 rounded-xl border border-sf-border/70 bg-gradient-to-b from-black/35 to-[#0f0e0c] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ring-1 ring-black/30 sm:flex-row sm:items-stretch sm:justify-between sm:gap-3 sm:p-3"
-          }
+          className="flex min-h-[148px] min-w-0 flex-col items-center gap-2 rounded-lg border border-sf-border/80 bg-black/25 p-2 text-center shadow-sm ring-1 ring-white/[0.04] sm:min-h-0 sm:p-3"
         >
           <button
             type="button"
-            className="flex min-w-0 flex-1 items-start gap-2.5 rounded-lg border border-transparent text-left transition-colors hover:border-sf-orange/25 hover:bg-white/[0.03]"
+            className="flex w-full flex-col items-center gap-2 rounded-lg border border-transparent transition-colors hover:border-sf-orange/30 hover:bg-white/[0.03]"
             onClick={() => openBuildingDetail(r, { showMap: false, showAdminControls: Boolean(me?.isAdmin) })}
           >
-            <ItemThumb className={cls} label="" size={rail ? 36 : 40} />
-            <div className="min-w-0 flex-1">
-              <p className={`truncate font-semibold text-sf-cream ${rail ? "text-xs" : "text-sm"}`}>{title}</p>
-              <p className="mt-0.5 text-[0.6rem] uppercase tracking-wider text-sf-muted/90">
-                {t("dashboard.widgets.controlKindSwitch")}
-              </p>
-              <PowerMwLine mw={mw} pctOfGrid={pctOfGrid} gridTotalMw={gridTotalMw} />
+            <div className="flex w-full shrink-0 justify-center">
+              <ItemThumb className={cls} label="" size={thumb} />
             </div>
+            <span className="line-clamp-3 min-h-0 w-full text-[0.7rem] leading-snug text-sf-cream sm:text-xs">{title}</span>
           </button>
-          <div className={`flex shrink-0 items-center justify-between gap-2 ${rail ? "flex-row" : "sm:flex-col sm:items-end"}`}>
-            <FrmIndustrialLever compact showLabels={false} on={on} busy={busy} onToggle={() => swMut.mutate({ id, status: !on })} />
-            {editMode ?
-              <button
-                type="button"
-                className="text-[0.6rem] uppercase tracking-wider text-sf-danger hover:underline"
-                onClick={() => toggleFavoriteSwitch(id)}
-              >
-                {t("dashboard.widgets.controlUnfavorite")}
-              </button>
-            : null}
+          <p className="text-[0.58rem] uppercase tracking-wider text-sf-muted">{t("dashboard.widgets.controlKindSwitch")}</p>
+          <ControlPowerBlock mw={mw} pctOfGrid={pctOfGrid} gridTotalMw={gridTotalMw} donutSize={52} visual />
+          <div className="mt-1 flex w-full justify-center">
+            <FrmIndustrialLever on={on} busy={busy} onToggle={() => swMut.mutate({ id, status: !on })} />
           </div>
         </li>
       );
     }
-    const r = c.row;
+    return (
+      <li
+        key={`sw-${id}`}
+        className="flex min-h-0 w-full min-w-0 items-center gap-1.5 rounded-lg border border-sf-border/80 bg-black/20 px-2 py-1.5 shadow-sm ring-1 ring-white/[0.03] sm:gap-2 sm:px-2.5 sm:py-2"
+      >
+        <button
+          type="button"
+          className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md border border-transparent text-left transition-colors hover:border-sf-orange/25 hover:bg-white/[0.03] sm:gap-2"
+          onClick={() => openBuildingDetail(r, { showMap: false, showAdminControls: Boolean(me?.isAdmin) })}
+        >
+          <ItemThumb className={cls} label="" size={thumb} />
+          <div className="min-w-0">
+            <span className="block truncate text-[0.7rem] text-sf-text sm:text-xs">{title}</span>
+            <span className="block text-[0.58rem] uppercase tracking-wider text-sf-muted">
+              {t("dashboard.widgets.controlKindSwitch")}
+            </span>
+          </div>
+        </button>
+        <ControlPowerBlock mw={mw} pctOfGrid={pctOfGrid} gridTotalMw={gridTotalMw} donutSize={34} visual={false} />
+        <FrmIndustrialLever on={on} busy={busy} onToggle={() => swMut.mutate({ id, status: !on })} />
+      </li>
+    );
+  };
+
+  const renderBuilding = (id: string, r: Record<string, unknown>, visual: boolean, thumb: number) => {
     const raw = String(r.ClassName ?? r.className ?? "").trim();
     const norm = raw ? normalizeBuildClassName(raw) : "—";
     const img = norm !== "—" ? norm : factoryBuildingClassForThumb(r);
@@ -249,42 +283,173 @@ export function FrmDashboardControlWidget({ editMode, variant }: Props) {
     const on = readCachedBuildingEnabled(id) ?? true;
     const busy = enMut.isPending && enMut.variables?.id === id;
     const mw = rowConsumedMw(r);
-    const pctOfGrid = gridTotalMw > 1e-9 ? (mw / gridTotalMw) * 100 : null;
+    const pctOfGrid = pctForMw(mw);
+    if (visual) {
+      return (
+        <li
+          key={`b-${id}`}
+          className="flex min-h-[148px] min-w-0 flex-col items-center gap-2 rounded-lg border border-sf-border/80 bg-black/25 p-2 text-center shadow-sm ring-1 ring-white/[0.04] sm:min-h-0 sm:p-3"
+        >
+          <button
+            type="button"
+            className="flex w-full flex-col items-center gap-2 rounded-lg border border-transparent transition-colors hover:border-sf-orange/30 hover:bg-white/[0.03]"
+            onClick={() => openBuildingDetail(r, { showMap: true, showAdminControls: Boolean(me?.isAdmin) })}
+          >
+            <div className="flex w-full shrink-0 justify-center">
+              <ItemThumb className={img} label="" size={thumb} />
+            </div>
+            <span className="line-clamp-3 min-h-0 w-full text-[0.7rem] leading-snug text-sf-cream sm:text-xs">{title}</span>
+          </button>
+          <p className="text-[0.58rem] uppercase tracking-wider text-sf-muted">{t("dashboard.widgets.controlKindBuilding")}</p>
+          <ControlPowerBlock mw={mw} pctOfGrid={pctOfGrid} gridTotalMw={gridTotalMw} donutSize={52} visual />
+          <div className="mt-1 flex w-full justify-center">
+            <FrmIndustrialLever on={on} busy={busy} onToggle={() => enMut.mutate({ id, status: !on })} />
+          </div>
+        </li>
+      );
+    }
     return (
       <li
         key={`b-${id}`}
-        className={
-          rail ?
-            "flex flex-col gap-2 rounded-xl border border-sf-border/60 bg-gradient-to-b from-black/40 to-[#100e0c] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ring-1 ring-black/35"
-          : "flex flex-col gap-2 rounded-xl border border-sf-border/70 bg-gradient-to-b from-black/35 to-[#0f0e0c] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ring-1 ring-black/30 sm:flex-row sm:items-stretch sm:justify-between sm:gap-3 sm:p-3"
-        }
+        className="flex min-h-0 w-full min-w-0 items-center gap-1.5 rounded-lg border border-sf-border/80 bg-black/20 px-2 py-1.5 shadow-sm ring-1 ring-white/[0.03] sm:gap-2 sm:px-2.5 sm:py-2"
       >
         <button
           type="button"
-          className="flex min-w-0 flex-1 items-start gap-2.5 rounded-lg border border-transparent text-left transition-colors hover:border-sf-orange/25 hover:bg-white/[0.03]"
+          className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md border border-transparent text-left transition-colors hover:border-sf-orange/25 hover:bg-white/[0.03] sm:gap-2"
           onClick={() => openBuildingDetail(r, { showMap: true, showAdminControls: Boolean(me?.isAdmin) })}
         >
-          <ItemThumb className={img} label="" size={rail ? 36 : 40} />
-          <div className="min-w-0 flex-1">
-            <p className={`truncate font-semibold text-sf-cream ${rail ? "text-xs" : "text-sm"}`}>{title}</p>
-            <p className="mt-0.5 text-[0.6rem] uppercase tracking-wider text-sf-muted/90">
+          <ItemThumb className={img} label="" size={thumb} />
+          <div className="min-w-0">
+            <span className="block truncate text-[0.7rem] text-sf-text sm:text-xs">{title}</span>
+            <span className="block text-[0.58rem] uppercase tracking-wider text-sf-muted">
               {t("dashboard.widgets.controlKindBuilding")}
-            </p>
-            <PowerMwLine mw={mw} pctOfGrid={pctOfGrid} gridTotalMw={gridTotalMw} />
+            </span>
           </div>
         </button>
-        <div className={`flex shrink-0 items-center justify-between gap-2 ${rail ? "flex-row" : "sm:flex-col sm:items-end"}`}>
-          <FrmIndustrialLever compact showLabels={false} on={on} busy={busy} onToggle={() => enMut.mutate({ id, status: !on })} />
-          {editMode ?
-            <button
-              type="button"
-              className="text-[0.6rem] uppercase tracking-wider text-sf-danger hover:underline"
-              onClick={() => toggleFavoriteBuilding(id)}
-            >
-              {t("dashboard.widgets.controlUnfavorite")}
-            </button>
+        <ControlPowerBlock mw={mw} pctOfGrid={pctOfGrid} gridTotalMw={gridTotalMw} donutSize={34} visual={false} />
+        <FrmIndustrialLever on={on} busy={busy} onToggle={() => enMut.mutate({ id, status: !on })} />
+      </li>
+    );
+  };
+
+  const renderGroup = (c: Extract<Card, { kind: "group" }>, visual: boolean, thumb: number) => {
+    const { group, members } = c;
+    const rows = members.map((m) => m.row);
+    const mw = sumFactoryRowsPowerMw(rows);
+    const pctOfGrid = pctForMw(mw);
+    const buildingCount = group.memberBuildingIds.length;
+
+    if (visual) {
+      return (
+        <li
+          key={`grp-${group.id}`}
+          className="flex min-h-[148px] min-w-0 flex-col items-center gap-2 rounded-lg border border-sf-border/80 bg-black/25 p-2 text-center shadow-sm ring-1 ring-white/[0.04] sm:min-h-0 sm:p-3"
+        >
+          <div className="flex w-full flex-col items-center gap-2">
+            <div className="flex w-full shrink-0 justify-center">
+              <ItemThumb className={group.thumbClass} label="" size={thumb} />
+            </div>
+            <span className="line-clamp-3 min-h-0 w-full text-[0.7rem] font-semibold leading-snug text-sf-cream sm:text-xs">{group.name}</span>
+            <p className="text-[0.58rem] uppercase tracking-wider text-sf-muted">
+              {t("dashboard.widgets.controlKindGroup")} · {t("dashboard.widgets.controlGroupBuildingCount", { count: buildingCount })}
+            </p>
+          </div>
+          <ControlPowerBlock mw={mw} pctOfGrid={pctOfGrid} gridTotalMw={gridTotalMw} donutSize={52} visual />
+          {members.length ?
+            <ul className="mt-1 w-full space-y-1 border-t border-sf-border/40 pt-2 text-left">
+              {members.map(({ id: mid, row: mr }) => {
+                const rawM = String(mr.ClassName ?? mr.className ?? "").trim();
+                const normM = rawM ? normalizeBuildClassName(rawM) : "—";
+                const imgM = normM !== "—" ? normM : factoryBuildingClassForThumb(mr);
+                const aliasM = prefs.buildingAliases[mid]?.trim();
+                const titleM = aliasM || frmgClassLabel(imgM, i18n.language);
+                const onM = readCachedBuildingEnabled(mid) ?? true;
+                const busyM = enMut.isPending && enMut.variables?.id === mid;
+                const canPow = rowSupportsSetEnabled(mr);
+                return (
+                  <li
+                    key={`${group.id}-${mid}`}
+                    className="flex items-center justify-between gap-2 rounded-md border border-sf-border/35 bg-black/20 px-1.5 py-1"
+                  >
+                    <button
+                      type="button"
+                      className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                      onClick={() =>
+                        openBuildingDetail(mr, { showMap: true, showAdminControls: Boolean(me?.isAdmin) })
+                      }
+                    >
+                      <ItemThumb className={imgM} label="" size={26} />
+                      <span className="truncate text-[0.65rem] text-sf-cream">{titleM}</span>
+                    </button>
+                    {canPow ?
+                      <FrmIndustrialLever
+                        on={onM}
+                        busy={busyM}
+                        onToggle={() => enMut.mutate({ id: mid, status: !onM })}
+                      />
+                    : null}
+                  </li>
+                );
+              })}
+            </ul>
           : null}
+        </li>
+      );
+    }
+
+    return (
+      <li
+        key={`grp-${group.id}`}
+        className="rounded-lg border border-sf-border/80 bg-black/20 px-2 py-2 shadow-sm ring-1 ring-white/[0.03] sm:px-2.5 sm:py-2"
+      >
+        <div className="flex min-h-0 w-full items-center gap-2">
+          <ItemThumb className={group.thumbClass} label="" size={thumb} />
+          <div className="min-w-0 flex-1">
+            <span className="block truncate text-[0.7rem] font-medium text-sf-text sm:text-xs">{group.name}</span>
+            <span className="block text-[0.58rem] text-sf-muted">
+              {t("dashboard.widgets.controlKindGroup")} · {t("dashboard.widgets.controlGroupBuildingCount", { count: buildingCount })}
+            </span>
+          </div>
+          <ControlPowerBlock mw={mw} pctOfGrid={pctOfGrid} gridTotalMw={gridTotalMw} donutSize={34} visual={false} />
         </div>
+        {members.length ?
+          <ul className="mt-2 space-y-1 border-t border-sf-border/40 pt-2">
+            {members.map(({ id: mid, row: mr }) => {
+              const rawM = String(mr.ClassName ?? mr.className ?? "").trim();
+              const normM = rawM ? normalizeBuildClassName(rawM) : "—";
+              const imgM = normM !== "—" ? normM : factoryBuildingClassForThumb(mr);
+              const aliasM = prefs.buildingAliases[mid]?.trim();
+              const titleM = aliasM || frmgClassLabel(imgM, i18n.language);
+              const onM = readCachedBuildingEnabled(mid) ?? true;
+              const busyM = enMut.isPending && enMut.variables?.id === mid;
+              const canPow = rowSupportsSetEnabled(mr);
+              return (
+                <li
+                  key={`${group.id}-${mid}`}
+                  className="flex items-center justify-between gap-2 rounded-md bg-black/15 px-1 py-0.5"
+                >
+                  <button
+                    type="button"
+                    className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
+                    onClick={() =>
+                      openBuildingDetail(mr, { showMap: true, showAdminControls: Boolean(me?.isAdmin) })
+                    }
+                  >
+                    <ItemThumb className={imgM} label="" size={22} />
+                    <span className="truncate text-[0.65rem] text-sf-cream">{titleM}</span>
+                  </button>
+                  {canPow ?
+                    <FrmIndustrialLever
+                      on={onM}
+                      busy={busyM}
+                      onToggle={() => enMut.mutate({ id: mid, status: !onM })}
+                    />
+                  : null}
+                </li>
+              );
+            })}
+          </ul>
+        : null}
       </li>
     );
   };
@@ -298,60 +463,27 @@ export function FrmDashboardControlWidget({ editMode, variant }: Props) {
     );
   }
 
-  const listBlock = (
-    <ul
-      className={
-        variant === "visual" ?
-          "flex max-h-[min(42vh,320px)] min-h-0 flex-col gap-2 overflow-y-auto pr-0.5 lg:max-h-none lg:w-[min(100%,300px)] lg:shrink-0"
-        : "flex h-full min-h-0 flex-col gap-2.5 overflow-y-auto p-2 sm:gap-3 sm:p-3"
-      }
-    >
-      {cards.map((c) => renderCard(c, variant === "visual" ? "mapRail" : "list"))}
-    </ul>
-  );
+  const visual = variant === "visual";
+  const thumb = visual ? 48 : 22;
 
-  if (variant === "standard") {
-    return listBlock;
-  }
-
-  /* Carte : repères favoris uniquement, bandeau réseau, liste à droite (desktop) ou sous la carte (mobile). */
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-2 p-2 sm:gap-3 sm:p-3 lg:flex-row lg:items-stretch">
-      <div className="flex min-h-0 min-w-0 flex-[1.15] flex-col gap-2">
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-sf-border/50 bg-black/25 px-2.5 py-1.5 ring-1 ring-white/[0.03]">
-          <span className="text-[0.65rem] font-medium uppercase tracking-wider text-sf-muted">
-            {t("dashboard.widgets.controlGridLoad")}
-          </span>
-          <span className="font-mono text-xs tabular-nums text-sf-cream">
-            {formatDecimalSpaces(gridTotalMw, 1)} MW
-          </span>
-        </div>
-        <div className="relative min-h-[min(36vh,260px)] flex-1 overflow-hidden rounded-xl border border-sf-border/60 bg-[#0a0c10] shadow-inner ring-1 ring-black/40">
-          {mapMarkers.length ?
-            <FrmWorldMapDeck
-              markers={mapMarkers}
-              autoFitToken={mapAutoFitToken}
-              scrollWheelZoom={false}
-              className="min-h-0 flex-1 rounded-lg"
-              selectedId={mapSelectedId}
-              onSelectMarker={onMapSelectMarker}
-              worldOverlays={emptyOverlays}
-              layerVisibility={{
-                buildingStorage: false,
-                buildingPower: false,
-                buildingProduction: false,
-                cables: false,
-                pipes: false,
-                belts: false,
-              }}
-            />
-          : <div className="flex h-full min-h-[180px] items-center justify-center px-4 text-center text-xs text-sf-muted">
-              {t("dashboard.widgets.controlMapNoCoords")}
-            </div>
-          }
-        </div>
-      </div>
-      {listBlock}
+    <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      {visual ?
+        <ul className={cardUl}>
+          {cards.map((c) => {
+            if (c.kind === "switch") return renderSwitch(c.id, c.row, true, thumb);
+            if (c.kind === "building") return renderBuilding(c.id, c.row, true, thumb);
+            return renderGroup(c, true, thumb);
+          })}
+        </ul>
+      : <ul className={listUl}>
+          {cards.map((c) => {
+            if (c.kind === "switch") return renderSwitch(c.id, c.row, false, thumb);
+            if (c.kind === "building") return renderBuilding(c.id, c.row, false, thumb);
+            return renderGroup(c, false, thumb);
+          })}
+        </ul>
+      }
     </div>
   );
 }
