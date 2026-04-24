@@ -58,14 +58,25 @@ function SettingsSection({
   title,
   action,
   children,
+  sectionClassName,
+  bodyClassName,
 }: {
   thumbClass: string;
   title: string;
   action?: ReactNode;
   children: ReactNode;
+  /** Classes additionnelles sur `<section>` (ex. `flex-1 min-h-0` pour remplir une colonne). */
+  sectionClassName?: string;
+  /** Classes additionnelles sur le conteneur du corps (ex. `flex min-h-0 flex-1 flex-col`). */
+  bodyClassName?: string;
 }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-sf-border/40 bg-gradient-to-b from-[#161411] to-[#0c0b09] shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_12px_40px_rgba(0,0,0,0.35)] ring-1 ring-black/50">
+    <section
+      className={
+        "overflow-hidden rounded-2xl border border-sf-border/40 bg-gradient-to-b from-[#161411] to-[#0c0b09] shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_12px_40px_rgba(0,0,0,0.35)] ring-1 ring-black/50 " +
+        (sectionClassName ?? "")
+      }
+    >
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-sf-border/35 bg-black/25 px-3 py-2.5 sm:gap-3 sm:px-4">
         <div className="flex min-w-0 items-center gap-2.5">
           <div className="flex shrink-0 rounded-lg border border-sf-border/35 bg-black/40 p-1 ring-1 ring-white/[0.04]">
@@ -75,7 +86,7 @@ function SettingsSection({
         </div>
         {action ? <div className="flex shrink-0 items-center">{action}</div> : null}
       </header>
-      <div className="p-3 sm:p-4">{children}</div>
+      <div className={"p-3 sm:p-4 " + (bodyClassName ?? "")}>{children}</div>
     </section>
   );
 }
@@ -94,6 +105,7 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
   const [draft, setDraft] = useState<Draft | null>(null);
   const [showAssetPicker, setShowAssetPicker] = useState(false);
   const [memberSearch, setMemberSearch] = useState("");
+  const [individualSearch, setIndividualSearch] = useState("");
 
   const swQ = useQuery({
     queryKey: ["frm", "getSwitches"],
@@ -143,6 +155,13 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
     if (!q) return buildingRows;
     return buildingRows.filter(({ row }) => frmBuildingRowSearchBlob(row, lang).includes(q));
   }, [buildingRows, memberSearch, i18n.language]);
+
+  const filteredIndividualRows = useMemo(() => {
+    const q = individualSearch.trim().toLowerCase();
+    const lang = i18n.language;
+    if (!q) return buildingRows;
+    return buildingRows.filter(({ row }) => frmBuildingRowSearchBlob(row, lang).includes(q));
+  }, [buildingRows, individualSearch, i18n.language]);
 
   useEffect(() => {
     if (!open) return;
@@ -207,13 +226,13 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
 
   if (!open) return null;
 
-  const listScroll = "max-h-[min(38vh,260px)] space-y-1.5 overflow-y-auto overscroll-contain pr-1";
+  const listSpaced = "space-y-1.5 overscroll-contain pr-1";
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-stretch justify-center sm:items-center sm:p-4 sm:pb-8">
+    <div className="fixed inset-0 z-[120] flex flex-col">
       <button
         type="button"
-        className="absolute inset-0 bg-black/70 backdrop-blur-[3px] transition-opacity"
+        className="absolute inset-0 bg-black/80 backdrop-blur-[2px] transition-opacity"
         aria-label={t("monitoring.productionClose")}
         onClick={onClose}
       />
@@ -221,9 +240,9 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
         role="dialog"
         aria-modal
         aria-labelledby="control-fav-settings-title"
-        className="relative z-10 flex h-[100dvh] w-full max-w-5xl flex-col overflow-hidden border-0 border-sf-border/50 bg-[#100e0c] shadow-[0_24px_80px_rgba(0,0,0,0.65)] ring-1 ring-black/60 sm:h-auto sm:max-h-[min(92dvh,880px)] sm:rounded-2xl sm:border sm:ring-sf-border/30"
+        className="relative z-10 flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden border-0 bg-[#100e0c] pt-[env(safe-area-inset-top,0px)] shadow-[0_0_0_1px_rgba(61,53,40,0.35)]"
       >
-        <header className="flex shrink-0 flex-col gap-3 border-b border-sf-border/45 bg-gradient-to-r from-sf-orange/[0.08] via-transparent to-sf-cyan/[0.05] px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-6 sm:py-5">
+        <header className="flex shrink-0 flex-col gap-3 border-b border-sf-border/45 bg-gradient-to-r from-sf-orange/[0.08] via-transparent to-sf-cyan/[0.05] px-4 py-3 sm:flex-row sm:items-start sm:justify-between sm:px-6 sm:py-4">
           <div className="min-w-0 flex-1">
             <h2
               id="control-fav-settings-title"
@@ -238,16 +257,15 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(251,146,60,0.06),transparent_50%)] px-4 py-5 sm:px-6 sm:py-6">
-          <div className="mx-auto flex max-w-5xl flex-col gap-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-8">
-            <div className="flex min-w-0 flex-col gap-6">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(251,146,60,0.06),transparent_50%)] px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:px-6 lg:grid lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] lg:gap-8 lg:overflow-hidden lg:py-5">
+          <div className="flex min-h-0 min-w-0 flex-col gap-6 lg:h-full lg:min-h-0 lg:overflow-hidden lg:pr-1">
               <SettingsSection thumbClass="Build_PriorityPowerSwitch_C" title={t("monitoring.powerFavoritesSwitches")}>
                 {swQ.isPending ?
                   <p className="py-6 text-center text-xs text-sf-muted">{t("common.loading")}</p>
                 : !switches.length ?
                   <p className="py-6 text-center text-xs text-sf-muted">{t("monitoring.empty")}</p>
                 : (
-                  <ul className={listScroll}>
+                  <ul className={`${listSpaced} lg:max-h-[min(32dvh,300px)] lg:overflow-y-auto`}>
                     {switches.map((r, i) => {
                       const id = switchRowId(r);
                       if (!id) return null;
@@ -286,65 +304,87 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
                 )}
               </SettingsSection>
 
-              <SettingsSection thumbClass="Build_ManufacturerMk1_C" title={t("control.favoritesIndividualBuildings")}>
+              <SettingsSection
+                thumbClass="Build_ManufacturerMk1_C"
+                title={t("control.favoritesIndividualBuildings")}
+                sectionClassName="min-h-0 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col"
+                bodyClassName="flex min-h-0 flex-col lg:flex-1 lg:min-h-0"
+              >
                 {facQ.isPending || genQ.isPending ?
                   <p className="py-6 text-center text-xs text-sf-muted">{t("common.loading")}</p>
                 : !buildingRows.length ?
                   <p className="py-6 text-center text-xs text-sf-muted">{t("monitoring.empty")}</p>
                 : (
-                  <ul className={listScroll}>
-                    {buildingRows.map(({ id, row }) => {
-                      const thumb = factoryBuildingClassForThumb(row);
-                      const fav = prefs.favoriteBuildingIds.includes(id);
-                      const alias = prefs.buildingAliases[id] ?? "";
-                      const buildingLabel = alias.trim() || frmgClassLabel(thumb, i18n.language);
-                      return (
-                        <li
-                          key={id}
-                          className="grid grid-cols-[auto_1fr] items-center gap-2 rounded-xl border border-sf-border/30 bg-black/25 p-2.5 transition-colors hover:border-sf-orange/25 hover:bg-black/35 sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,11rem)] sm:gap-3"
-                        >
-                          <StarBtn
-                            on={fav}
-                            onClick={() => toggleFavoriteBuilding(id)}
-                            label={fav ? t("monitoring.powerFavRemove") : t("monitoring.powerFavAdd")}
-                          />
-                          <button
-                            type="button"
-                            className="flex min-w-0 items-center gap-2.5 text-left"
-                            onClick={() => openBuildingDetail(row, { showMap: true, showAdminControls: isAdmin })}
-                          >
-                            <ItemThumb className={thumb} label="" size={30} />
-                            <span className="truncate text-xs font-medium text-sf-cream">{buildingLabel}</span>
-                          </button>
-                          <input
-                            defaultValue={alias}
-                            placeholder={t("monitoring.powerAliasPlaceholder")}
-                            onBlur={(e) => setBuildingAlias(id, e.target.value)}
-                            className="sf-input col-span-2 min-h-9 w-full text-xs sm:col-span-1 sm:col-auto"
-                          />
-                        </li>
-                      );
-                    })}
-                  </ul>
+                  <>
+                    <input
+                      type="search"
+                      value={individualSearch}
+                      onChange={(e) => setIndividualSearch(e.target.value)}
+                      placeholder={t("control.favoritesIndividualSearch")}
+                      className="sf-input mb-2 min-h-9 w-full shrink-0 text-xs"
+                      aria-label={t("control.favoritesIndividualSearch")}
+                    />
+                    {filteredIndividualRows.length ?
+                      <ul className={`${listSpaced} min-h-0 lg:flex-1 lg:overflow-y-auto`}>
+                        {filteredIndividualRows.map(({ id, row }) => {
+                          const thumb = factoryBuildingClassForThumb(row);
+                          const fav = prefs.favoriteBuildingIds.includes(id);
+                          const alias = prefs.buildingAliases[id] ?? "";
+                          const buildingLabel = alias.trim() || frmgClassLabel(thumb, i18n.language);
+                          return (
+                            <li
+                              key={id}
+                              className="grid grid-cols-[auto_1fr] items-center gap-2 rounded-xl border border-sf-border/30 bg-black/25 p-2.5 transition-colors hover:border-sf-orange/25 hover:bg-black/35 sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,11rem)] sm:gap-3"
+                            >
+                              <StarBtn
+                                on={fav}
+                                onClick={() => toggleFavoriteBuilding(id)}
+                                label={fav ? t("monitoring.powerFavRemove") : t("monitoring.powerFavAdd")}
+                              />
+                              <button
+                                type="button"
+                                className="flex min-w-0 items-center gap-2.5 text-left"
+                                onClick={() => openBuildingDetail(row, { showMap: true, showAdminControls: isAdmin })}
+                              >
+                                <ItemThumb className={thumb} label="" size={30} />
+                                <span className="truncate text-xs font-medium text-sf-cream">{buildingLabel}</span>
+                              </button>
+                              <input
+                                defaultValue={alias}
+                                placeholder={t("monitoring.powerAliasPlaceholder")}
+                                onBlur={(e) => setBuildingAlias(id, e.target.value)}
+                                className="sf-input col-span-2 min-h-9 w-full text-xs sm:col-span-1 sm:col-auto"
+                              />
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    : individualSearch.trim() ?
+                      <p className="py-8 text-center text-xs text-sf-muted">{t("monitoring.empty")}</p>
+                    : null}
+                  </>
                 )}
               </SettingsSection>
-            </div>
+          </div>
 
-            <SettingsSection
+          <SettingsSection
               thumbClass="Build_MinerMk2_C"
               title={t("control.favoritesBuildingGroups")}
+              sectionClassName="min-h-0 lg:flex lg:h-full lg:min-h-0 lg:flex-col"
+              bodyClassName="flex min-h-0 flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden"
               action={
                 <button type="button" className="sf-btn text-xs" onClick={startNewDraft} disabled={draft !== null}>
                   {t("control.favoritesGroupNew")}
                 </button>
               }
             >
+              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain lg:min-h-0">
               {!prefs.favoriteBuildingGroups.length ?
                 <p className="rounded-lg border border-dashed border-sf-border/50 bg-black/20 px-4 py-8 text-center text-xs leading-relaxed text-sf-muted">
                   {t("control.favoritesNoGroupsYet")}
                 </p>
               : (
-                <ul className="mb-4 space-y-2">
+                <ul className="mb-4 shrink-0 space-y-2">
                   {prefs.favoriteBuildingGroups.map((g) => {
                     const groupFav = prefs.favoriteBuildingGroupIds.includes(g.id);
                     return (
@@ -385,7 +425,7 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
               )}
 
               {draft ?
-                <div className="overflow-hidden rounded-2xl border border-sf-orange/35 bg-gradient-to-b from-sf-orange/[0.09] via-[#12100e] to-[#0a0908] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ring-1 ring-sf-orange/15">
+                <div className="mt-2 min-h-0 flex-1 overflow-hidden rounded-2xl border border-sf-orange/35 bg-gradient-to-b from-sf-orange/[0.09] via-[#12100e] to-[#0a0908] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ring-1 ring-sf-orange/15 lg:flex lg:min-h-0 lg:flex-col">
                   <div className="border-b border-sf-orange/25 bg-sf-orange/[0.06] px-4 py-3">
                     <p className="text-sm font-semibold text-sf-cream">
                       {draft.id ? t("control.favoritesGroupEditTitle") : t("control.favoritesGroupCreateTitle")}
@@ -394,8 +434,8 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
                       {draft.memberIds.length} {t("control.favoritesGroupMembersCount")} · {t("control.favoritesGroupMembers")}
                     </p>
                   </div>
-                  <div className="space-y-4 p-4">
-                    <label className="block">
+                  <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-4 lg:min-h-0">
+                    <label className="block shrink-0">
                       <span className="mb-1.5 block text-[0.65rem] font-medium uppercase tracking-wider text-sf-muted">
                         {t("control.favoritesGroupName")}
                       </span>
@@ -407,7 +447,7 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
                         placeholder={t("control.favoritesGroupNamePlaceholder")}
                       />
                     </label>
-                    <div>
+                    <div className="shrink-0">
                       <p className="mb-2 text-[0.65rem] font-medium uppercase tracking-wider text-sf-muted">
                         {t("control.favoritesGroupImage")}
                       </p>
@@ -425,8 +465,8 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
                         </div>
                       : null}
                     </div>
-                    <div>
-                      <p className="mb-2 text-[0.65rem] font-medium uppercase tracking-wider text-sf-muted">
+                    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+                      <p className="mb-2 shrink-0 text-[0.65rem] font-medium uppercase tracking-wider text-sf-muted">
                         {t("control.favoritesGroupMembers")}
                       </p>
                       <input
@@ -434,9 +474,9 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
                         value={memberSearch}
                         onChange={(e) => setMemberSearch(e.target.value)}
                         placeholder={t("control.favoritesGroupMembersSearch")}
-                        className="sf-input mb-2 min-h-9 w-full text-xs"
+                        className="sf-input mb-2 min-h-9 w-full shrink-0 text-xs"
                       />
-                      <div className="max-h-[min(36vh,240px)] overflow-y-auto overscroll-contain rounded-xl border border-sf-border/35 bg-black/30 p-2 ring-1 ring-inset ring-black/40">
+                      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-xl border border-sf-border/35 bg-black/30 p-2 ring-1 ring-inset ring-black/40">
                         {!filteredMemberRows.length ?
                           <p className="py-8 text-center text-xs text-sf-muted">{t("monitoring.empty")}</p>
                         : (
@@ -476,7 +516,7 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
                         )}
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-2 border-t border-sf-border/30 pt-4">
+                    <div className="flex shrink-0 flex-wrap gap-2 border-t border-sf-border/30 pt-4">
                       <button type="button" className="sf-btn text-sm" onClick={saveDraft} disabled={!draft.name.trim()}>
                         {t("control.favoritesGroupSave")}
                       </button>
@@ -495,8 +535,8 @@ export function ControlFavoritesSettingsModal({ open, onClose, isAdmin }: Props)
                   </div>
                 </div>
               : null}
-            </SettingsSection>
-          </div>
+              </div>
+          </SettingsSection>
         </div>
       </div>
     </div>

@@ -1444,7 +1444,7 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-3 sm:gap-4">
+    <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-3 sm:gap-4">
       <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-3">
         <div className="min-w-0">
           <h1 className="sf-display text-lg font-semibold uppercase tracking-[0.12em] text-sf-orange sm:text-xl sm:tracking-[0.15em]">

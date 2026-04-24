@@ -512,7 +512,7 @@ export function ShellLayout({
   );
 
   return (
-    <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 items-stretch">
+    <div className="flex min-h-0 w-full flex-1 flex-row items-stretch">
       {/* Mobile overlay */}
       {mobileOpen ? (
         <button
@@ -528,7 +528,7 @@ export function ShellLayout({
         className={
           "relative flex shrink-0 flex-col border-r border-sf-border/80 bg-[#12100e] shadow-xl transition-[transform,width] duration-200 ease-out " +
           "max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-50 max-md:h-full " +
-          "md:sticky md:top-0 md:z-10 md:h-[100dvh] md:self-start md:shadow-none " +
+          "md:sticky md:top-0 md:z-10 md:h-full md:self-start md:shadow-none " +
           asideWidthClass +
           (mobileOpen ? " translate-x-0" : " -translate-x-full md:translate-x-0")
         }
@@ -618,7 +618,7 @@ export function ShellLayout({
               {t("nav.publicViewerBanner")}
             </div>
           : null}
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
+          <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">{children}</div>
         </main>
       </div>
     </div>

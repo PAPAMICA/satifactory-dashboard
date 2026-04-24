@@ -162,7 +162,7 @@ function ProductionPageBody() {
   );
 
   return (
-    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-4">
+    <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-4">
       <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="sf-display text-lg font-semibold uppercase tracking-[0.12em] text-sf-orange sm:text-xl">
@@ -275,7 +275,7 @@ function ProductionPageBody() {
         : !rows.length ?
           <p className="text-sm text-sf-muted">{t("monitoring.empty")}</p>
         : (
-          <div className="mx-auto grid min-h-0 w-full max-w-6xl flex-1 grid-cols-2 gap-2 overflow-y-auto overscroll-contain sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="mx-auto grid min-h-0 w-full max-w-[min(100%,96rem)] flex-1 grid-cols-[repeat(auto-fill,minmax(10.75rem,1fr))] gap-x-2 gap-y-2.5 overflow-y-auto overscroll-contain px-0.5 sm:gap-x-2.5 sm:gap-y-3 sm:px-1">
             {shown.map((vm, i) => {
               const r = vm.row;
               const thumbCls = factoryBuildingClassForThumb(r);
@@ -289,32 +289,38 @@ function ProductionPageBody() {
               const prodLinesCard = factoryProductionLines(r);
               const pillMuted = "rounded border border-sf-border/50 bg-black/20 px-1.5 py-0.5 text-[0.62rem] text-sf-muted";
               const netOk = connected && g != null && c != null;
+              const bucket = factoryStatusBucket(r);
+              /** Pastilles MW / débits : couleur seulement en production effective. */
+              const lineActive = bucket === "producing";
+              const mwHighlight = lineActive && pCur > 0.01;
+              const outHighlight = lineActive && outPm > 0.01;
+              const inHighlight = lineActive && inPm > 0.01;
 
               return (
                 <button
                   key={String(r.ID ?? r.id ?? i)}
                   type="button"
                   onClick={() => openRow(r)}
-                  className="relative flex w-full max-w-[13.5rem] flex-col gap-2 rounded-lg border border-sf-border/70 bg-black/25 p-2.5 text-left shadow-sm ring-1 ring-white/[0.04] transition-colors hover:border-sf-orange/40 hover:bg-black/35 sm:max-w-none sm:p-3"
+                  className="relative flex w-full max-w-[11rem] flex-col gap-1.5 rounded-lg border border-sf-border/70 bg-black/25 p-2 text-left shadow-sm ring-1 ring-white/[0.04] transition-colors hover:border-sf-orange/40 hover:bg-black/35 justify-self-center sm:max-w-[11.25rem] sm:p-2.5"
                 >
-                  <div className="absolute right-2 top-2 z-[1]">
+                  <div className="absolute right-1.5 top-1.5 z-[1] sm:right-2 sm:top-2">
                     <EfficiencyCapsule pct={vm.efficiency} />
                   </div>
-                  <div className="flex items-start gap-2 pr-12 sm:gap-3 sm:pr-14">
-                    <ItemThumb className={thumbCls} label={vm.primary} size={40} />
+                  <div className="flex items-start gap-1.5 pr-11 sm:gap-2 sm:pr-12">
+                    <ItemThumb className={thumbCls} label={vm.primary} size={36} />
                     <div className="min-w-0 flex-1">
-                      <p className="pr-1 font-semibold leading-snug text-sf-cream">{vm.primary}</p>
-                      <div className="mt-1.5">
+                      <p className="pr-0.5 text-[0.8125rem] font-semibold leading-snug text-sf-cream sm:text-sm">{vm.primary}</p>
+                      <div className="mt-1">
                         <RecipeOutputsList
                           lines={prodLinesCard.slice(0, 4)}
                           lang={i18n.language}
-                          thumbSize={26}
+                          thumbSize={24}
                           dense
                         />
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-1.5 text-[0.62rem]">
+                  <div className="flex flex-wrap gap-1 text-[0.6rem] sm:text-[0.62rem]">
                     {vm.boosted ?
                       <span className="rounded bg-sf-orange/15 px-1.5 py-0.5 font-medium text-sf-orange">
                         {t("monitoring.productionBoost")}
@@ -323,7 +329,7 @@ function ProductionPageBody() {
                     <span
                       className={
                         netOk ?
-                          "rounded border border-sf-cyan/35 bg-sf-cyan/10 px-1.5 py-0.5 text-[0.62rem] text-sf-cyan"
+                          "rounded border border-sf-cyan/35 bg-sf-cyan/10 px-1.5 py-0.5 text-[0.6rem] text-sf-cyan sm:text-[0.62rem]"
                         : pillMuted
                       }
                     >
@@ -331,8 +337,8 @@ function ProductionPageBody() {
                     </span>
                     <span
                       className={
-                        pCur > 0.01 ?
-                          "rounded border border-sf-orange/40 bg-sf-orange/10 px-1.5 py-0.5 font-mono text-[0.62rem] text-sf-orange"
+                        mwHighlight ?
+                          "rounded border border-sf-orange/40 bg-sf-orange/10 px-1.5 py-0.5 font-mono text-[0.6rem] text-sf-orange sm:text-[0.62rem]"
                         : `${pillMuted} font-mono`
                       }
                     >
@@ -340,8 +346,8 @@ function ProductionPageBody() {
                     </span>
                     <span
                       className={
-                        outPm > 0 ?
-                          "rounded border border-emerald-600/35 bg-emerald-950/45 px-1.5 py-0.5 font-mono text-[0.62rem] text-emerald-200"
+                        outHighlight ?
+                          "rounded border border-emerald-600/35 bg-emerald-950/45 px-1.5 py-0.5 font-mono text-[0.6rem] text-emerald-200 sm:text-[0.62rem]"
                         : `${pillMuted} font-mono`
                       }
                     >
@@ -349,8 +355,8 @@ function ProductionPageBody() {
                     </span>
                     <span
                       className={
-                        inPm > 0 ?
-                          "rounded border border-amber-600/35 bg-amber-950/45 px-1.5 py-0.5 font-mono text-[0.62rem] text-amber-100"
+                        inHighlight ?
+                          "rounded border border-amber-600/35 bg-amber-950/45 px-1.5 py-0.5 font-mono text-[0.6rem] text-amber-100 sm:text-[0.62rem]"
                         : `${pillMuted} font-mono`
                       }
                     >

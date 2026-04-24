@@ -68,32 +68,42 @@ function ControlPowerBlock({
   pctOfGrid,
   gridTotalMw,
   visual,
+  visualDense,
 }: {
   mw: number;
   pctOfGrid: number | null;
   gridTotalMw: number;
   visual: boolean;
+  /** Cartes « visual » compactes du widget Contrôle. */
+  visualDense?: boolean;
 }) {
   const { t } = useTranslation();
   const frac = pctOfGrid != null && gridTotalMw > 0 ? Math.min(1, (pctOfGrid as number) / 100) : 0;
   const hasPct = pctOfGrid != null && gridTotalMw > 0;
 
   if (visual) {
+    const d = Boolean(visualDense);
     return (
-      <div className="mt-auto w-full border-t border-sf-border/50 pt-2">
-        <div className="flex items-center justify-center gap-1.5 text-sf-cyan">
-          <span className="sf-display text-base font-semibold tabular-nums sm:text-lg">
+      <div className={`mt-auto w-full border-t border-sf-border/50 ${d ? "pt-1.5" : "pt-2"}`}>
+        <div className={`flex items-center justify-center gap-1 text-sf-cyan ${d ? "" : "gap-1.5"}`}>
+          <span
+            className={`sf-display font-semibold tabular-nums ${d ? "text-sm" : "text-base sm:text-lg"}`}
+          >
             {formatDecimalSpaces(mw, 2)}
           </span>
-          <span className="text-[0.55rem] font-normal text-sf-muted">MW</span>
+          <span className={`font-normal text-sf-muted ${d ? "text-[0.5rem]" : "text-[0.55rem]"}`}>MW</span>
         </div>
-        <div className="mt-2 space-y-1">
+        <div className={d ? "mt-1 space-y-0.5" : "mt-2 space-y-1"}>
           {hasPct ?
             <>
               <LinearFractionBar fraction={frac} kind="consumption" />
-              <p className="text-center text-[0.55rem] leading-tight text-sf-muted">{t("dashboard.widgets.controlOfGrid")}</p>
+              <p
+                className={`text-center leading-tight text-sf-muted ${d ? "text-[0.5rem]" : "text-[0.55rem]"}`}
+              >
+                {t("dashboard.widgets.controlOfGrid")}
+              </p>
             </>
-          : <span className="block text-center text-[0.65rem] text-sf-muted">—</span>}
+          : <span className={`block text-center text-sf-muted ${d ? "text-[0.58rem]" : "text-[0.65rem]"}`}>—</span>}
         </div>
       </div>
     );
@@ -226,7 +236,7 @@ export function FrmDashboardControlWidget({ variant }: Props) {
   const listUl =
     "flex min-h-0 w-full min-w-0 flex-1 flex-col gap-1.5 overflow-y-auto overflow-x-hidden p-2 sm:p-3";
   const cardUl =
-    "grid min-h-0 w-full min-w-0 flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(148px,1fr))] gap-2 overflow-y-auto overflow-x-hidden p-2 sm:gap-3 sm:p-3 md:grid-cols-[repeat(auto-fill,minmax(168px,1fr))]";
+    "grid min-h-0 w-full min-w-0 flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(118px,1fr))] gap-1.5 overflow-y-auto overflow-x-hidden p-1.5 sm:gap-2 sm:p-2 md:grid-cols-[repeat(auto-fill,minmax(128px,1fr))]";
 
   const pctForMw = (mw: number) => (gridTotalMw > 1e-9 ? (mw / gridTotalMw) * 100 : null);
 
@@ -242,22 +252,22 @@ export function FrmDashboardControlWidget({ variant }: Props) {
       return (
         <li
           key={`sw-${id}`}
-          className="flex min-h-[198px] min-w-0 flex-col items-center gap-2 rounded-lg border border-sf-border/80 bg-black/25 p-2 text-center shadow-sm ring-1 ring-white/[0.04] sm:min-h-0 sm:p-3"
+          className="flex min-h-0 min-w-0 flex-col items-center gap-1.5 rounded-lg border border-sf-border/80 bg-black/25 p-1.5 text-center shadow-sm ring-1 ring-white/[0.04] sm:p-2"
         >
           <button
             type="button"
-            className="flex w-full flex-col items-center gap-2 rounded-lg border border-transparent transition-colors hover:border-sf-orange/30 hover:bg-white/[0.03]"
+            className="flex w-full flex-col items-center gap-1.5 rounded-lg border border-transparent transition-colors hover:border-sf-orange/30 hover:bg-white/[0.03]"
             onClick={() => openBuildingDetail(r, { showMap: false, showAdminControls: Boolean(me?.isAdmin) })}
           >
             <div className="flex w-full shrink-0 justify-center">
               <ItemThumb className={cls} label="" size={thumb} />
             </div>
-            <span className="line-clamp-3 min-h-0 w-full text-[0.7rem] leading-snug text-sf-cream sm:text-xs">{title}</span>
+            <span className="line-clamp-2 min-h-0 w-full text-[0.65rem] leading-snug text-sf-cream sm:text-[0.7rem]">{title}</span>
           </button>
-          <p className="text-[0.58rem] uppercase tracking-wider text-sf-muted">{t("dashboard.widgets.controlKindSwitch")}</p>
-          <ControlPowerBlock mw={mw} pctOfGrid={pctOfGrid} gridTotalMw={gridTotalMw} visual />
-          <div className="mt-1 flex w-full justify-center">
-            <FrmIndustrialLever on={on} busy={busy} onToggle={() => swMut.mutate({ id, status: !on })} />
+          <p className="text-[0.52rem] uppercase tracking-wider text-sf-muted">{t("dashboard.widgets.controlKindSwitch")}</p>
+          <ControlPowerBlock mw={mw} pctOfGrid={pctOfGrid} gridTotalMw={gridTotalMw} visual visualDense />
+          <div className="flex w-full shrink-0 justify-center pt-0.5">
+            <FrmIndustrialLever size="mini" on={on} busy={busy} onToggle={() => swMut.mutate({ id, status: !on })} />
           </div>
         </li>
       );
@@ -281,7 +291,7 @@ export function FrmDashboardControlWidget({ variant }: Props) {
           </div>
         </button>
         <ControlPowerBlock mw={mw} pctOfGrid={pctOfGrid} gridTotalMw={gridTotalMw} visual={false} />
-        <FrmIndustrialLever size="compact" on={on} busy={busy} onToggle={() => swMut.mutate({ id, status: !on })} />
+        <FrmIndustrialLever size="mini" on={on} busy={busy} onToggle={() => swMut.mutate({ id, status: !on })} />
       </li>
     );
   };
@@ -300,22 +310,22 @@ export function FrmDashboardControlWidget({ variant }: Props) {
       return (
         <li
           key={`b-${id}`}
-          className="flex min-h-[198px] min-w-0 flex-col items-center gap-2 rounded-lg border border-sf-border/80 bg-black/25 p-2 text-center shadow-sm ring-1 ring-white/[0.04] sm:min-h-0 sm:p-3"
+          className="flex min-h-0 min-w-0 flex-col items-center gap-1.5 rounded-lg border border-sf-border/80 bg-black/25 p-1.5 text-center shadow-sm ring-1 ring-white/[0.04] sm:p-2"
         >
           <button
             type="button"
-            className="flex w-full flex-col items-center gap-2 rounded-lg border border-transparent transition-colors hover:border-sf-orange/30 hover:bg-white/[0.03]"
+            className="flex w-full flex-col items-center gap-1.5 rounded-lg border border-transparent transition-colors hover:border-sf-orange/30 hover:bg-white/[0.03]"
             onClick={() => openBuildingDetail(r, { showMap: true, showAdminControls: Boolean(me?.isAdmin) })}
           >
             <div className="flex w-full shrink-0 justify-center">
               <ItemThumb className={img} label="" size={thumb} />
             </div>
-            <span className="line-clamp-3 min-h-0 w-full text-[0.7rem] leading-snug text-sf-cream sm:text-xs">{title}</span>
+            <span className="line-clamp-2 min-h-0 w-full text-[0.65rem] leading-snug text-sf-cream sm:text-[0.7rem]">{title}</span>
           </button>
-          <p className="text-[0.58rem] uppercase tracking-wider text-sf-muted">{t("dashboard.widgets.controlKindBuilding")}</p>
-          <ControlPowerBlock mw={mw} pctOfGrid={pctOfGrid} gridTotalMw={gridTotalMw} visual />
-          <div className="mt-1 flex w-full justify-center">
-            <FrmIndustrialLever on={on} busy={busy} onToggle={() => enMut.mutate({ id, status: !on })} />
+          <p className="text-[0.52rem] uppercase tracking-wider text-sf-muted">{t("dashboard.widgets.controlKindBuilding")}</p>
+          <ControlPowerBlock mw={mw} pctOfGrid={pctOfGrid} gridTotalMw={gridTotalMw} visual visualDense />
+          <div className="flex w-full shrink-0 justify-center pt-0.5">
+            <FrmIndustrialLever size="mini" on={on} busy={busy} onToggle={() => enMut.mutate({ id, status: !on })} />
           </div>
         </li>
       );
@@ -339,7 +349,7 @@ export function FrmDashboardControlWidget({ variant }: Props) {
           </div>
         </button>
         <ControlPowerBlock mw={mw} pctOfGrid={pctOfGrid} gridTotalMw={gridTotalMw} visual={false} />
-        <FrmIndustrialLever size="compact" on={on} busy={busy} onToggle={() => enMut.mutate({ id, status: !on })} />
+        <FrmIndustrialLever size="mini" on={on} busy={busy} onToggle={() => enMut.mutate({ id, status: !on })} />
       </li>
     );
   };
@@ -359,21 +369,22 @@ export function FrmDashboardControlWidget({ variant }: Props) {
       return (
         <li
           key={`grp-${group.id}`}
-          className="flex min-h-[198px] min-w-0 flex-col items-center gap-2 rounded-lg border border-sf-border/80 bg-black/25 p-2 text-center shadow-sm ring-1 ring-white/[0.04] sm:min-h-0 sm:p-3"
+          className="flex min-h-0 min-w-0 flex-col items-center gap-1.5 rounded-lg border border-sf-border/80 bg-black/25 p-1.5 text-center shadow-sm ring-1 ring-white/[0.04] sm:p-2"
         >
-          <div className="flex w-full flex-col items-center gap-2">
+          <div className="flex w-full flex-col items-center gap-1.5">
             <div className="flex w-full shrink-0 justify-center">
               <ItemThumb className={group.thumbClass} label="" size={thumb} />
             </div>
-            <span className="line-clamp-3 min-h-0 w-full text-[0.7rem] font-semibold leading-snug text-sf-cream sm:text-xs">{group.name}</span>
-            <p className="text-[0.58rem] uppercase tracking-wider text-sf-muted">
+            <span className="line-clamp-2 min-h-0 w-full text-[0.65rem] font-semibold leading-snug text-sf-cream sm:text-[0.7rem]">{group.name}</span>
+            <p className="text-[0.52rem] uppercase tracking-wider text-sf-muted">
               {t("dashboard.widgets.controlKindGroup")} · {t("dashboard.widgets.controlGroupBuildingCount", { count: buildingCount })}
             </p>
           </div>
-          <ControlPowerBlock mw={mw} pctOfGrid={pctOfGrid} gridTotalMw={gridTotalMw} visual />
+          <ControlPowerBlock mw={mw} pctOfGrid={pctOfGrid} gridTotalMw={gridTotalMw} visual visualDense />
           {powMemberIds.length ?
-            <div className="mt-1 flex w-full justify-center">
+            <div className="flex w-full shrink-0 justify-center pt-0.5">
               <FrmIndustrialLever
+                size="mini"
                 on={groupOn}
                 busy={groupBusy}
                 onToggle={() => groupPowMut.mutate({ ids: powMemberIds, status: !groupOn })}
@@ -401,7 +412,7 @@ export function FrmDashboardControlWidget({ variant }: Props) {
         <ControlPowerBlock mw={mw} pctOfGrid={pctOfGrid} gridTotalMw={gridTotalMw} visual={false} />
         {powMemberIds.length ?
           <FrmIndustrialLever
-            size="compact"
+            size="mini"
             on={groupOn}
             busy={groupBusy}
             onToggle={() => groupPowMut.mutate({ ids: powMemberIds, status: !groupOn })}
@@ -421,7 +432,7 @@ export function FrmDashboardControlWidget({ variant }: Props) {
   }
 
   const visual = variant === "visual";
-  const thumb = visual ? 48 : 22;
+  const thumb = visual ? 34 : 22;
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">

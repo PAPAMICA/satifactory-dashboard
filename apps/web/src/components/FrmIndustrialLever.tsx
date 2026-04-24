@@ -12,8 +12,8 @@ type Props = {
   labelOff?: string;
   /** @deprecated Conservé pour compat ; non affiché. */
   showLabels?: boolean;
-  /** `compact` : dimensions réduites (cartes dashboard denses). */
-  size?: "default" | "compact";
+  /** `compact` / `mini` / `micro` : dimensions réduites (listes, cartes dashboard, cartes contrôle). */
+  size?: "default" | "compact" | "mini" | "micro";
 };
 
 /**
@@ -33,6 +33,8 @@ export function FrmIndustrialLever({
   const hi = labelOn ?? t("control.stateOn");
   const isDisabled = Boolean(disabled || busy);
   const compact = size === "compact";
+  const mini = size === "mini";
+  const micro = size === "micro";
 
   return (
     <button
@@ -45,7 +47,7 @@ export function FrmIndustrialLever({
       title={on ? hi : lo}
       className={
         "frmIndustrialLever " +
-        (compact ? "frmIndustrialLever--compact " : "") +
+        (micro ? "frmIndustrialLever--micro " : mini ? "frmIndustrialLever--mini " : compact ? "frmIndustrialLever--compact " : "") +
         (isDisabled ? "frmIndustrialLever--disabled " : "")
       }
     >

@@ -110,7 +110,7 @@ function ResourceSinkPageBody() {
   });
 
   return (
-    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain">
+    <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain">
       <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
         <h1 className="sf-display text-lg font-semibold uppercase tracking-[0.12em] text-sf-orange sm:text-xl">
           {t("monitoring.sinkTitle")}

@@ -41,6 +41,36 @@
   --il-tilt-on: 20deg;
 }
 
+/** Très petit (cartes widget dashboard). */
+.frmIndustrialLever--mini {
+  --il-w: 42px;
+  --il-h: 54px;
+  --il-pad: 5px;
+  --il-radius: 2px;
+  --il-persp: 260px;
+  --il-face-h: 13px;
+  --il-tz: 5px;
+  --il-tilt-off: -18deg;
+  --il-tilt-on: 18deg;
+}
+
+/** Encore plus compact (grille interrupteurs page Contrôle). */
+.frmIndustrialLever--micro {
+  --il-w: 34px;
+  --il-h: 46px;
+  --il-pad: 4px;
+  --il-radius: 2px;
+  --il-persp: 220px;
+  --il-face-h: 11px;
+  --il-tz: 4px;
+  --il-tilt-off: -16deg;
+  --il-tilt-on: 16deg;
+}
+
+.frmIndustrialLever--micro .frmIndustrialLever-plate {
+  transform-origin: center center -7px;
+}
+
 .frmIndustrialLever:disabled,
 .frmIndustrialLever--disabled {
   cursor: not-allowed;
@@ -80,6 +110,10 @@
 
 .frmIndustrialLever--compact .frmIndustrialLever-plate {
   transform-origin: center center -12px;
+}
+
+.frmIndustrialLever--mini .frmIndustrialLever-plate {
+  transform-origin: center center -9px;
 }
 
 .frmIndustrialLever-plate--on {
@@ -141,6 +175,10 @@
 
 .frmIndustrialLever--compact .frmIndustrialLever-dots {
   background-size: 5px 5px;
+}
+
+.frmIndustrialLever--mini .frmIndustrialLever-dots {
+  background-size: 4px 4px;
 }
 
 .frmIndustrialLever-characters {
@@ -207,6 +245,12 @@
 .frmIndustrialLever--compact .frmIndustrialLever-busyDot {
   width: 16px;
   height: 16px;
+}
+
+.frmIndustrialLever--mini .frmIndustrialLever-busyDot {
+  width: 13px;
+  height: 13px;
+  border-width: 1.5px;
 }
 
 @keyframes frmIndustrialLever-flicker {

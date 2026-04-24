@@ -24,7 +24,7 @@ function MapPageBody() {
   const rows = asFrmRowArray(q.data);
 
   return (
-    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-3 sm:gap-4">
+    <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-3 sm:gap-4">
       <div className="shrink-0">
         <h1 className="sf-display text-lg font-semibold uppercase tracking-[0.12em] text-sf-orange sm:text-xl">
           {t("monitoring.mapTitle")}

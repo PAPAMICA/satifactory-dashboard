@@ -547,7 +547,7 @@ export function ProductionBuildingModal({ row, onClose, showMap = true, showAdmi
       >
         <div className="flex shrink-0 items-start justify-between gap-3 border-b border-sf-border/60 px-3 py-2.5 sm:px-4">
           <div className="flex min-w-0 flex-1 items-start gap-2.5">
-            <ItemThumb className={thumbCls} label={primary} size={showMap ? 44 : 36} />
+            <ItemThumb priority className={thumbCls} label={primary} size={showMap ? 44 : 36} />
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h2
