@@ -383,6 +383,8 @@ if (isProd) {
   await app.register(fastifyStatic, {
     root: publicDir,
     prefix: "/",
+    // @fastify/static v10 : `serve: true` impose un `root` pour exposer les fichiers.
+    serve: true,
   });
   app.setNotFoundHandler((req, reply) => {
     if (req.url.startsWith("/api")) {
